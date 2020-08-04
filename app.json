@@ -1,0 +1,12 @@
+{
+  "name": "MemberApp",
+  "displayName": "MemberApp",
+  "expo": {
+    "name": "MemberApp",
+    "slug": "MemberApp",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
