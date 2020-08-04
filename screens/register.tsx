@@ -1,18 +1,25 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, Alert, ActivityIndicator, ImageBackground } from 'react-native';
+import { StyleSheet, View, TextInput, Button, ActivityIndicator, ImageBackground } from 'react-native';
 import firebase from '../database/firebase';
 
 const image = require("../images/bkg.jpg");
 
 export default class Signup extends Component {
+  db: firebase.firestore.Firestore;
+
   constructor() {
     super();
     this.state = {
       name: '',
-      email: '',
-      password: '',
+      mobile: '',
+      gender: 'male',
+      city: '',
+      dob: '',
+      pin: '',
       isLoading: false
     }
+
+    this.db = firebase.firestore();
   }
 
   updateInputVal = (val, prop) => {
@@ -22,37 +29,32 @@ export default class Signup extends Component {
   }
 
   registerUser = () => {
-    if (this.state.email === '' && this.state.password === '') {
-      Alert.alert('Enter details to signup!')
-    } else {
-      this.setState({
-        isLoading: true
-      });
+    console.log('State = ', this.state);
 
-      firebase
-        .auth()
-        .createUserWithEmailAndPassword(this.state.email, this.state.password)
-        .then((res) => {
-          res.user.updateProfile({
-            name: this.state.name
-          });
+    this.setState({
+      isLoading: true
+    });
 
-          console.log('User registered successfully!', res);
+    this.db.collection("new_member_list").doc(this.state.mobile).set(this.state)
+      .then((docRef) => {
+        console.log("Document written with ID: ", docRef);
 
-          this.setState({
-            isLoading: false,
-            name: '',
-            email: '',
-            password: ''
-          });
-
-          this.props.navigation.navigate('Login');
-        })
-        .catch(error => {
-          console.log('Register error = ', error);
-          this.setState({ errorMessage: error.message });
+        this.setState({
+          isLoading: false,
+          name: '',
+          mobile: '',
+          gender: 'male',
+          city: '',
+          dob: '',
+          pin: ''
         });
-    }
+
+        this.props.navigation.navigate('Login');
+      })
+      .catch(error => {
+        console.log('Register error = ', error);
+        this.setState({ errorMessage: error.message });
+      });
   }
 
   render() {
@@ -69,27 +71,39 @@ export default class Signup extends Component {
           <View style={styles.overlay}>
             <TextInput
               style={styles.inputStyle}
-              placeholder="Name"
+              placeholder="Mobile"
+              value={this.state.mobile}
+              onChangeText={(val) => this.updateInputVal(val, 'mobile')}
+            />
+            <TextInput
+              style={styles.inputStyle}
+              placeholder="Full Name"
               value={this.state.name}
               onChangeText={(val) => this.updateInputVal(val, 'name')}
             />
             <TextInput
               style={styles.inputStyle}
-              placeholder="Email"
-              value={this.state.email}
-              onChangeText={(val) => this.updateInputVal(val, 'email')}
+              placeholder="Date of Birth"
+              value={this.state.dob}
+              onChangeText={(val) => this.updateInputVal(val, 'dob')}
             />
             <TextInput
               style={styles.inputStyle}
-              placeholder="Password"
-              value={this.state.password}
-              onChangeText={(val) => this.updateInputVal(val, 'password')}
-              maxLength={15}
+              placeholder="City"
+              value={this.state.city}
+              onChangeText={(val) => this.updateInputVal(val, 'city')}
+            />
+            <TextInput
+              style={styles.inputStyle}
+              placeholder="Create login pin (4 digits)"
+              keyboardType='numeric'
+              value={this.state.pin}
               secureTextEntry={true}
+              onChangeText={(val) => this.updateInputVal(val, 'pin')}
             />
             <Button
               color="#3740FE"
-              title="Signup"
+              title="Sign Up"
               onPress={() => this.registerUser()}
             />
           </View>

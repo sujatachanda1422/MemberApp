@@ -14,7 +14,7 @@ const Stack = createStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Register"
+      <Stack.Navigator initialRouteName="Login"
         screenOptions={{
           headerTitleAlign: 'center',
           headerTitleStyle: {
