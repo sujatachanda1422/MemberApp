@@ -13,16 +13,22 @@ import {
 import firebase from 'firebase';
 
 export default class Chat extends Component {
+  db: firebase.firestore.Firestore;
+
   constructor(props) {
     super(props);
     this.state = {
       person: {
-        from: this.props.route.params.from,
-        to: this.props.route.params.to
+        from: this.props.route.params.from.mobile,
+        to: this.props.route.params.user.mobile,
+        user: this.props.route.params.user,
+        loggedInMember: this.props.route.params.from,
       },
       textMessage: '',
       messageList: [],
     };
+
+    this.db = firebase.firestore();
   }
 
   componentDidMount() {
@@ -49,7 +55,7 @@ export default class Chat extends Component {
 
   handleChange = key => val => {
     this.setState({ [key]: val });
-  };
+  }
 
   convertTime = time => {
     let d = new Date(time);
@@ -60,10 +66,37 @@ export default class Chat extends Component {
       result = d.getDay() + ' ' + d.getMonth() + ' ' + result;
     }
     return result;
-  };
+  }
+
+  setChatListDb() {
+    let batch = this.db.batch();
+
+    let fromRef = this.db.collection("chat_list")
+    .doc(this.state.person.from)
+    .collection('members')
+    .doc(this.state.person.user.mobile);
+
+    batch.set(fromRef, this.state.person.user);
+
+    let toRef = this.db.collection("chat_list")
+    .doc(this.state.person.to)
+    .collection('members')
+    .doc(this.state.person.loggedInMember.mobile);
+
+    batch.set(toRef, this.state.person.loggedInMember);
+
+    // Commit the batch
+    batch.commit().then(function () {
+      console.log('Chat db updated');
+    });
+  }
 
   sendMessage = async () => {
-    if (this.state.textMessage.length > 0) {
+    if (this.state.textMessage.length) {
+      if (!this.state.messageList.length) {
+        this.setChatListDb();
+      }
+
       let msgId = firebase
         .database()
         .ref('messages')

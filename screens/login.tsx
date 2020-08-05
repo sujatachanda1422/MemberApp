@@ -18,9 +18,22 @@ export default class Login extends Component {
     constructor() {
         super();
         this.state = {
-            mobile: '54321',
+            mobile: '111',
             pin: '1234',
             isLoading: false
+        }
+    }
+
+    componentDidMount() {
+        try {
+            const registeredUserMobile = this.props.route.params.mobile;
+            if (registeredUserMobile) {
+                this.setState({ mobile: registeredUserMobile });
+            }
+        }
+
+        catch (err) {
+            console.log('Mobile not found');
         }
     }
 
@@ -37,7 +50,7 @@ export default class Login extends Component {
 
         firebase
             .firestore()
-            .collection("new_member_list")
+            .collection("member_list")
             .doc(this.state.mobile)
             .get()
             .then((querySnapshot) => {

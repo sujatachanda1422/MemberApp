@@ -35,9 +35,9 @@ export default class Signup extends Component {
       isLoading: true
     });
 
-    this.db.collection("new_member_list").doc(this.state.mobile).set(this.state)
-      .then((docRef) => {
-        console.log("Document written with ID: ", docRef);
+    this.db.collection("member_list").doc(this.state.mobile).set(this.state)
+      .then(_ => {
+        this.props.navigation.navigate('Login', { mobile: this.state.mobile });
 
         this.setState({
           isLoading: false,
@@ -48,8 +48,6 @@ export default class Signup extends Component {
           dob: '',
           pin: ''
         });
-
-        this.props.navigation.navigate('Login');
       })
       .catch(error => {
         console.log('Register error = ', error);

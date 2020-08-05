@@ -10,7 +10,8 @@ export default class Home extends Component {
     super();
 
     this.state = {
-      memberList: []
+      memberList: [],
+      memberDetails: {}
     }
   }
 
@@ -22,13 +23,21 @@ export default class Home extends Component {
   }
 
   UNSAFE_componentWillMount() {
+    this.setState({ memberDetails: this.props.route.params.user });
+
     firebase
       .firestore()
-      .collection("member_master").get().then((querySnapshot) => {
+      .collection("member_list")
+      .get().then((querySnapshot) => {
         console.log('Query - ', querySnapshot);
+        let docData;
 
         querySnapshot.forEach((doc) => {
-          this.memberArray.push(doc.data());
+          docData = doc.data();
+
+          if (docData.mobile !== this.state.memberDetails.mobile) {
+            this.memberArray.push(docData);
+          }
         });
 
         this.setState({ memberList: [...this.memberArray] });
@@ -43,10 +52,15 @@ export default class Home extends Component {
         <FlatList
           data={this.state.memberList}
           width='100%'
-          keyExtractor={(index) => index.uid}
+          keyExtractor={(index) => index.mobile}
           renderItem={({ item }) =>
             <TouchableOpacity style={styles.item}
-              onPress={() => this.props.navigation.navigate('Chat', { from: item.uid, to: item.uid })} >
+              onPress={() => this.props.navigation.navigate('Chat',
+                {
+                  from: this.state.memberDetails,
+                  user: item
+                })} >
+
               <View style={styles.listItem}>
                 <Text style={styles.listText}>
                   {item.name}
