@@ -6,8 +6,7 @@ import Register from './screens/register';
 import Login from './screens/login';
 import Home from './screens/home';
 import Chat from './screens/chat';
-import AddMember from './screens/profile';
-import MemberChatList from './screens/memberChatList';
+import Profile from './screens/profile';
 
 const Stack = createStackNavigator();
 
@@ -38,10 +37,12 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={Home}
-          options={({ navigation }) => ({
+          options={({ navigation, route }) => ({
             title: 'Welcome',
             headerRight: () => (
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <TouchableOpacity onPress={() => navigation.navigate('Profile',
+                { user: route.params.user }
+              )}>
                 <Text style={styles.addBtn}>
                   Profile
                 </Text>
@@ -52,6 +53,10 @@ export default function App() {
         <Stack.Screen
           name="Chat"
           component={Chat}
+        />
+        <Stack.Screen
+          name="Profile"
+          component={Profile}
         />
       </Stack.Navigator>
     </NavigationContainer>

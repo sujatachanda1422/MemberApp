@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, Text, TextInput, Button, ActivityIndicator, ImageBackground } from 'react-native';
+import { StyleSheet, View, TextInput, Button, ActivityIndicator, ImageBackground } from 'react-native';
 import firebase from '../database/firebase';
-import { RadioButton } from 'react-native-paper';
 
 const image = require("../images/bkg.jpg");
 
-export default class Signup extends Component {
+export default class Profile extends Component {
   db: firebase.firestore.Firestore;
 
   constructor() {
@@ -29,7 +28,7 @@ export default class Signup extends Component {
     this.setState(state);
   }
 
-  registerUser = () => {
+  updateUser = () => {
     console.log('State = ', this.state);
 
     this.setState({
@@ -38,10 +37,13 @@ export default class Signup extends Component {
 
     this.db.collection("member_list").doc(this.state.mobile).set(this.state)
       .then(_ => {
-        this.props.navigation.navigate('Login', { mobile: this.state.mobile });
+        this.setState({
+          isLoading: false
+        });
+
+        this.props.navigation.navigate('Home', { user: this.state });
 
         this.setState({
-          isLoading: false,
           name: '',
           mobile: '',
           gender: 'male',
@@ -56,6 +58,10 @@ export default class Signup extends Component {
       });
   }
 
+  UNSAFE_componentWillMount() {
+    this.setState(this.props.route.params.user);
+  }
+
   render() {
     if (this.state.isLoading) {
       return (
@@ -66,11 +72,11 @@ export default class Signup extends Component {
     }
     return (
       <View style={styles.container}>
-        <ImageBackground source={image} style={styles.image}>
           <View style={styles.overlay}>
             <TextInput
-              style={styles.inputStyle}
+              style={[styles.inputStyle, {backgroundColor: '#dcdcdc'}]}
               placeholder="Mobile"
+              editable={false}
               value={this.state.mobile}
               onChangeText={(val) => this.updateInputVal(val, 'mobile')}
             />
@@ -80,14 +86,6 @@ export default class Signup extends Component {
               value={this.state.name}
               onChangeText={(val) => this.updateInputVal(val, 'name')}
             />
-            <RadioButton.Group onValueChange={value => this.updateInputVal(value, 'gender')}
-              value={this.state.gender}>
-              <View style={styles.radio}>
-                <Text style={styles.radioText}>Gender: </Text>
-                <RadioButton.Item label="Male" value="male" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
-                <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
-              </View>
-            </RadioButton.Group>
             <TextInput
               style={styles.inputStyle}
               placeholder="Date of Birth"
@@ -100,21 +98,12 @@ export default class Signup extends Component {
               value={this.state.city}
               onChangeText={(val) => this.updateInputVal(val, 'city')}
             />
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="Create login pin (4 digits)"
-              keyboardType='numeric'
-              value={this.state.pin}
-              secureTextEntry={true}
-              onChangeText={(val) => this.updateInputVal(val, 'pin')}
-            />
             <Button
               color="#3740FE"
-              title="Sign Up"
-              onPress={() => this.registerUser()}
+              title="Update"
+              onPress={() => this.updateUser()}
             />
           </View>
-        </ImageBackground>
       </View>
     );
   }
@@ -125,7 +114,8 @@ const styles = StyleSheet.create({
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "center"
+    justifyContent: "center",
+    backgroundColor: '#aac8dc'
   },
   overlay: {
     backgroundColor: 'rgba(199,199,199,0.3)',
@@ -155,22 +145,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff'
-  },
-  radio: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 10,
-    backgroundColor: '#fff'
-  },
-  radioText: {
-    lineHeight: 30,
-    fontSize: 14
-  },
-  radioBtn: {
-    marginRight: 20,
-  },
-  radioBtnLbl: {
-    fontSize: 14
   }
 });
