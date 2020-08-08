@@ -5,6 +5,7 @@ import { AntDesign } from '@expo/vector-icons';
 
 export default class Home extends Component {
   memberArray: Array<Object> = [];
+  db: firebase.firestore.Firestore;
 
   constructor() {
     super();
@@ -12,7 +13,9 @@ export default class Home extends Component {
     this.state = {
       memberList: [],
       memberDetails: {}
-    }
+    };
+
+    this.db = firebase.firestore();
   }
 
   signOut = () => {
@@ -25,11 +28,9 @@ export default class Home extends Component {
   UNSAFE_componentWillMount() {
     this.setState({ memberDetails: this.props.route.params.user });
 
-    firebase
-      .firestore()
+    this.db
       .collection("member_list")
       .get().then((querySnapshot) => {
-        console.log('Query - ', querySnapshot);
         let docData;
 
         querySnapshot.forEach((doc) => {
@@ -46,6 +47,37 @@ export default class Home extends Component {
       });
   }
 
+  checkForSubscription(item) {
+    this.db.collection("chat_list")
+      .doc(this.state.memberDetails.mobile)
+      .collection('members')
+      .get()
+      .then((querySnapshot) => {
+        const chatMemberLength = querySnapshot.size;
+        let docData: firebase.firestore.DocumentData[] = [];
+
+        querySnapshot.forEach(doc => {
+          return docData.push(doc.data().mobile);
+        });
+
+        // console.log('Data = ', docData, this.state.memberDetails, item);
+
+        // Free 1 member chat
+        if (docData.indexOf(item.mobile) > -1) {
+          this.props.navigation.navigate('Chat',
+            {
+              from: this.state.memberDetails,
+              user: item
+            });
+        } else {
+          this.props.navigation.navigate('Subscription', { user: this.state.memberDetails });
+        }
+      })
+      .catch(error => {
+        console.log('Error = ', error);
+      });
+  }
+
   render() {
     return (
       <View style={styles.container}>
@@ -55,12 +87,7 @@ export default class Home extends Component {
           keyExtractor={(index) => index.mobile}
           renderItem={({ item }) =>
             <TouchableOpacity style={styles.item}
-              onPress={() => this.props.navigation.navigate('Chat',
-                {
-                  from: this.state.memberDetails,
-                  user: item
-                })} >
-
+              onPress={() => this.checkForSubscription(item)} >
               <View style={styles.listItem}>
                 <Text style={styles.listText}>
                   {item.name}

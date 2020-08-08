@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, TextInput, Button, ActivityIndicator, ImageBackground } from 'react-native';
+import { StyleSheet, View, TextInput, Button, ActivityIndicator } from 'react-native';
 import firebase from '../database/firebase';
-
-const image = require("../images/bkg.jpg");
 
 export default class Profile extends Component {
   db: firebase.firestore.Firestore;

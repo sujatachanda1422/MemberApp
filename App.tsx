@@ -7,6 +7,7 @@ import Login from './screens/login';
 import Home from './screens/home';
 import Chat from './screens/chat';
 import Profile from './screens/profile';
+import Subscription from './screens/subscription';
 
 const Stack = createStackNavigator();
 
@@ -57,6 +58,13 @@ export default function App() {
         <Stack.Screen
           name="Profile"
           component={Profile}
+        />
+        <Stack.Screen
+          name="Subscription"
+          options={{
+            title: "Select a package"
+          }}
+          component={Subscription}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -7,7 +7,8 @@ import {
     Button,
     ActivityIndicator,
     ImageBackground,
-    Image
+    Image,
+    Alert
 } from 'react-native';
 import firebase from '../database/firebase';
 

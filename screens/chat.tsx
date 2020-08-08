@@ -6,9 +6,8 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Dimensions,
   Image,
-  StyleSheet
+  StyleSheet,
 } from 'react-native';
 import firebase from 'firebase';
 
@@ -17,6 +16,7 @@ export default class Chat extends Component {
 
   constructor(props) {
     super(props);
+
     this.state = {
       person: {
         from: this.props.route.params.from.mobile,
@@ -33,8 +33,9 @@ export default class Chat extends Component {
 
   componentDidMount() {
     this.props.navigation.setOptions({
-      title: this.props.route.params.name
-    })
+      title: this.props.route.params.user.name
+    });
+
   }
 
   UNSAFE_componentWillMount() {
@@ -44,7 +45,8 @@ export default class Chat extends Component {
       .child(this.state.person.from)
       .child(this.state.person.to)
       .on('child_added', value => {
-        console.log("Old chats == ", value.val());
+        // console.log("Old chats == ", value.val());
+
         this.setState(prevState => {
           return {
             messageList: [...prevState.messageList, value.val()],
@@ -72,16 +74,16 @@ export default class Chat extends Component {
     let batch = this.db.batch();
 
     let fromRef = this.db.collection("chat_list")
-    .doc(this.state.person.from)
-    .collection('members')
-    .doc(this.state.person.user.mobile);
+      .doc(this.state.person.from)
+      .collection('members')
+      .doc(this.state.person.user.mobile);
 
     batch.set(fromRef, this.state.person.user);
 
     let toRef = this.db.collection("chat_list")
-    .doc(this.state.person.to)
-    .collection('members')
-    .doc(this.state.person.loggedInMember.mobile);
+      .doc(this.state.person.to)
+      .collection('members')
+      .doc(this.state.person.loggedInMember.mobile);
 
     batch.set(toRef, this.state.person.loggedInMember);
 
@@ -148,8 +150,6 @@ export default class Chat extends Component {
   };
 
   render() {
-    // let { height } = Dimensions.get('window');
-
     return (
       <View style={{ display: "flex", flexDirection: 'column', height: '100%' }}>
         <ScrollView style={{ flex: 1 }}>
