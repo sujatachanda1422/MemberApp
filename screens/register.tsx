@@ -17,7 +17,10 @@ export default class Signup extends Component {
       city: '',
       dob: '',
       pin: '',
-      isLoading: false
+      isLoading: false,
+      isRegistered: null,
+      isMobileVerified: null,
+      isOtpSent: false
     }
 
     this.db = firebase.firestore();
@@ -27,6 +30,10 @@ export default class Signup extends Component {
     const state = this.state;
     state[prop] = val;
     this.setState(state);
+  }
+
+  UNSAFE_componentWillMount() {
+    this.setState({ isRegistered: this.props.route.params.verified });
   }
 
   registerUser = () => {
@@ -56,6 +63,37 @@ export default class Signup extends Component {
       });
   }
 
+  sendOtp() {
+    console.log('Mobile = ', this.state.mobile);
+
+    this.db.collection("member_list").doc(this.state.mobile).set(this.state)
+      .then(_ => {
+        this.setState({
+          isOtpSent: true
+        });
+      })
+      .catch(error => {
+        console.log('Register error = ', error);
+      });
+  }
+
+  verifyOtp() {
+    console.log('Mobile = ', this.state.mobile);
+
+    return;
+
+    this.db.collection("member_list").doc(this.state.mobile).set(this.state)
+      .then(_ => {
+        this.setState({
+          isOtpSent: true
+        });
+      })
+      .catch(error => {
+        console.log('Register error = ', error);
+        this.setState({ errorMessage: error.message });
+      });
+  }
+
   render() {
     if (this.state.isLoading) {
       return (
@@ -68,51 +106,89 @@ export default class Signup extends Component {
       <View style={styles.container}>
         <ImageBackground source={image} style={styles.image}>
           <View style={styles.overlay}>
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="Mobile"
-              value={this.state.mobile}
-              onChangeText={(val) => this.updateInputVal(val, 'mobile')}
-            />
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="Full Name"
-              value={this.state.name}
-              onChangeText={(val) => this.updateInputVal(val, 'name')}
-            />
-            <RadioButton.Group onValueChange={value => this.updateInputVal(value, 'gender')}
-              value={this.state.gender}>
-              <View style={styles.radio}>
-                <Text style={styles.radioText}>Gender: </Text>
-                <RadioButton.Item label="Male" value="male" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
-                <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+            {!this.state.isRegistered &&
+              <View>
+                <TextInput
+                  style={styles.inputStyle}
+                  placeholder="Enter Mobile"
+                  value={this.state.mobile}
+                  onChangeText={(val) => this.updateInputVal(val, 'mobile')}
+                />
+
+                <Button
+                  color="#3740FE"
+                  title="Send OTP"
+                  onPress={() => this.sendOtp()}
+                />
+
+                <Text
+                  style={styles.loginText}
+                  onPress={() => this.props.navigation.navigate('Login')}>
+                  Already have an account? Click here to go to Login page.
+           </Text>
               </View>
-            </RadioButton.Group>
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="Date of Birth"
-              value={this.state.dob}
-              onChangeText={(val) => this.updateInputVal(val, 'dob')}
-            />
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="City"
-              value={this.state.city}
-              onChangeText={(val) => this.updateInputVal(val, 'city')}
-            />
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="Create login pin (4 digits)"
-              keyboardType='numeric'
-              value={this.state.pin}
-              secureTextEntry={true}
-              onChangeText={(val) => this.updateInputVal(val, 'pin')}
-            />
-            <Button
-              color="#3740FE"
-              title="Sign Up"
-              onPress={() => this.registerUser()}
-            />
+            }
+
+            {(!this.state.isRegistered && this.state.isOtpSent) &&
+              <View>
+                <TextInput
+                  style={styles.inputStyle}
+                  placeholder="Enter OTP"
+                  value={this.state.otp}
+                  onChangeText={(val) => this.updateInputVal(val, 'otp')}
+                />
+
+                <Button
+                  color="#3740FE"
+                  title="Verify OTP"
+                  onPress={() => this.verifyOtp()}
+                />
+              </View>
+            }
+
+            {this.state.isRegistered &&
+              <View style={styles.overlay}>
+                <TextInput
+                  style={styles.inputStyle}
+                  placeholder="Full Name"
+                  value={this.state.name}
+                  onChangeText={(val) => this.updateInputVal(val, 'name')}
+                />
+                <RadioButton.Group onValueChange={value => this.updateInputVal(value, 'gender')}
+                  value={this.state.gender}>
+                  <View style={styles.radio}>
+                    <Text style={styles.radioText}>Gender: </Text>
+                    <RadioButton.Item label="Male" value="male" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+                    <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+                  </View>
+                </RadioButton.Group>
+                <TextInput
+                  style={styles.inputStyle}
+                  placeholder="Date of Birth"
+                  value={this.state.dob}
+                  onChangeText={(val) => this.updateInputVal(val, 'dob')}
+                />
+                <TextInput
+                  style={styles.inputStyle}
+                  placeholder="City"
+                  value={this.state.city}
+                  onChangeText={(val) => this.updateInputVal(val, 'city')}
+                />
+                <TextInput
+                  style={styles.inputStyle}
+                  placeholder="Create login pin (4 digits)"
+                  keyboardType='numeric'
+                  value={this.state.pin}
+                  secureTextEntry={true}
+                  onChangeText={(val) => this.updateInputVal(val, 'pin')}
+                />
+                <Button
+                  color="#3740FE"
+                  title="Sign Up"
+                  onPress={() => this.registerUser()}
+                />
+              </View>
+            }
           </View>
         </ImageBackground>
       </View>
@@ -172,5 +248,10 @@ const styles = StyleSheet.create({
   },
   radioBtnLbl: {
     fontSize: 14
+  },
+  loginText: {
+    color: '#fff',
+    marginTop: 25,
+    textAlign: 'center'
   }
 });

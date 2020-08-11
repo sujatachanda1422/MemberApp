@@ -2,6 +2,10 @@ import React, { Component } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity } from 'react-native';
 import firebase from '../database/firebase';
 import { AntDesign } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-community/async-storage';
+
+let isUserLoggedIn = false;
+let loggedInUserMobile: string | null | undefined = null;
 
 export default class Home extends Component {
   memberArray: Array<Object> = [];
@@ -18,15 +22,18 @@ export default class Home extends Component {
     this.db = firebase.firestore();
   }
 
-  signOut = () => {
-    // firebase.auth().signOut().then(() => {-
-    this.props.navigation.navigate('Login')
-    // })
-    // .catch(error => this.setState({ errorMessage: error.message }))
+  async isLoggedIn() {
+    loggedInUserMobile = await AsyncStorage.getItem('loggedInMobile');
+
+    console.log('loggedInMobile == ', loggedInUserMobile);
+
+    if (loggedInUserMobile !== null) {
+      isUserLoggedIn = true;
+    }
   }
 
-  UNSAFE_componentWillMount() {
-    this.setState({ memberDetails: this.props.route.params.user });
+  async UNSAFE_componentWillMount() {
+    await this.isLoggedIn();
 
     this.db
       .collection("member_list")
@@ -36,7 +43,7 @@ export default class Home extends Component {
         querySnapshot.forEach((doc) => {
           docData = doc.data();
 
-          if (docData.mobile !== this.state.memberDetails.mobile) {
+          if (!loggedInUserMobile || docData.mobile !== loggedInUserMobile) {
             this.memberArray.push(docData);
           }
         });
@@ -47,9 +54,15 @@ export default class Home extends Component {
       });
   }
 
-  checkForSubscription(item) {
+  checkForSubscription(item: { mobile: firebase.firestore.DocumentData; }) {
+    // For not registered user
+    if (!loggedInUserMobile) {
+      this.props.navigation.navigate('Register', { verified: false });
+      return;
+    }
+
     this.db.collection("chat_list")
-      .doc(this.state.memberDetails.mobile)
+      .doc(loggedInUserMobile)
       .collection('members')
       .get()
       .then((querySnapshot) => {
@@ -60,17 +73,17 @@ export default class Home extends Component {
           return docData.push(doc.data().mobile);
         });
 
-        // console.log('Data = ', docData, this.state.memberDetails, item);
+        // console.log('Data = ', docData, loggedInUserMobile, item);
 
         // Free 1 member chat
         if (docData.indexOf(item.mobile) > -1) {
           this.props.navigation.navigate('Chat',
             {
-              from: this.state.memberDetails,
+              from: loggedInUserMobile,
               user: item
             });
         } else {
-          this.props.navigation.navigate('Subscription', { user: this.state.memberDetails });
+          this.props.navigation.navigate('Subscription', { user: loggedInUserMobile });
         }
       })
       .catch(error => {
