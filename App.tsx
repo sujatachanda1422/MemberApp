@@ -40,15 +40,15 @@ export default function App() {
           component={Home}
           options={({ navigation, route }) => ({
             title: 'Welcome',
-            headerRight: () => (
-              <TouchableOpacity onPress={() => navigation.navigate('Profile',
-                { user: route.params.user }
-              )}>
-                <Text style={styles.addBtn}>
-                  Profile
-                </Text>
-              </TouchableOpacity>
-            )
+            // headerRight: () => (
+            //   <TouchableOpacity onPress={() => navigation.navigate('Profile',
+            //     { user: route.params.user }
+            //   )}>
+            //     <Text style={styles.addBtn}>
+            //       Profile
+            //     </Text>
+            //   </TouchableOpacity>
+            // )
           })}
         />
         <Stack.Screen

@@ -39,6 +39,7 @@ export default class Chat extends Component {
   }
 
   UNSAFE_componentWillMount() {
+    console.log('State ', this.state);
     firebase
       .database()
       .ref('messages')

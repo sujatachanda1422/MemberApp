@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { StyleSheet, View, TextInput, Button, ActivityIndicator } from 'react-native';
 import firebase from '../database/firebase';
+import AsyncStorage from '@react-native-community/async-storage';
 
 export default class Profile extends Component {
   db: firebase.firestore.Firestore;
@@ -26,8 +27,10 @@ export default class Profile extends Component {
     this.setState(state);
   }
 
-  updateUser = () => {
-    console.log('State = ', this.state);
+  async updateUser() {
+    
+
+    return;
 
     this.setState({
       isLoading: true
@@ -70,38 +73,38 @@ export default class Profile extends Component {
     }
     return (
       <View style={styles.container}>
-          <View style={styles.overlay}>
-            <TextInput
-              style={[styles.inputStyle, {backgroundColor: '#dcdcdc'}]}
-              placeholder="Mobile"
-              editable={false}
-              value={this.state.mobile}
-              onChangeText={(val) => this.updateInputVal(val, 'mobile')}
-            />
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="Full Name"
-              value={this.state.name}
-              onChangeText={(val) => this.updateInputVal(val, 'name')}
-            />
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="Date of Birth"
-              value={this.state.dob}
-              onChangeText={(val) => this.updateInputVal(val, 'dob')}
-            />
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="City"
-              value={this.state.city}
-              onChangeText={(val) => this.updateInputVal(val, 'city')}
-            />
-            <Button
-              color="#3740FE"
-              title="Update"
-              onPress={() => this.updateUser()}
-            />
-          </View>
+        <View style={styles.overlay}>
+          <TextInput
+            style={[styles.inputStyle, { backgroundColor: '#dcdcdc' }]}
+            placeholder="Mobile"
+            editable={false}
+            value={this.state.mobile}
+            onChangeText={(val) => this.updateInputVal(val, 'mobile')}
+          />
+          <TextInput
+            style={styles.inputStyle}
+            placeholder="Full Name"
+            value={this.state.name}
+            onChangeText={(val) => this.updateInputVal(val, 'name')}
+          />
+          <TextInput
+            style={styles.inputStyle}
+            placeholder="Date of Birth"
+            value={this.state.dob}
+            onChangeText={(val) => this.updateInputVal(val, 'dob')}
+          />
+          <TextInput
+            style={styles.inputStyle}
+            placeholder="City"
+            value={this.state.city}
+            onChangeText={(val) => this.updateInputVal(val, 'city')}
+          />
+          <Button
+            color="#3740FE"
+            title="Update"
+            onPress={() => this.updateUser()}
+          />
+        </View>
       </View>
     );
   }

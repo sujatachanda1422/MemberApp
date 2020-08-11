@@ -29,6 +29,7 @@ export default class Home extends Component {
 
     if (loggedInUserMobile !== null) {
       isUserLoggedIn = true;
+      this.props.navigation.navigate('Login');
     }
   }
 
@@ -43,7 +44,8 @@ export default class Home extends Component {
         querySnapshot.forEach((doc) => {
           docData = doc.data();
 
-          if (!loggedInUserMobile || docData.mobile !== loggedInUserMobile) {
+          if ((!loggedInUserMobile || docData.mobile !== loggedInUserMobile)
+            && docData.name) {
             this.memberArray.push(docData);
           }
         });
@@ -56,7 +58,7 @@ export default class Home extends Component {
 
   checkForSubscription(item: { mobile: firebase.firestore.DocumentData; }) {
     // For not registered user
-    if (!loggedInUserMobile) {
+    if (!isUserLoggedIn) {
       this.props.navigation.navigate('Register', { verified: false });
       return;
     }
@@ -76,14 +78,14 @@ export default class Home extends Component {
         // console.log('Data = ', docData, loggedInUserMobile, item);
 
         // Free 1 member chat
-        if (docData.indexOf(item.mobile) > -1) {
+        if (!docData.length || docData.indexOf(item.mobile) > -1) {
           this.props.navigation.navigate('Chat',
             {
-              from: loggedInUserMobile,
+              from: this.props.route.params.user,
               user: item
             });
         } else {
-          this.props.navigation.navigate('Subscription', { user: loggedInUserMobile });
+          this.props.navigation.navigate('Subscription', { user: this.props.route.params.user });
         }
       })
       .catch(error => {

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { StyleSheet, View, Text, TextInput, Button, ActivityIndicator, ImageBackground } from 'react-native';
 import firebase from '../database/firebase';
 import { RadioButton } from 'react-native-paper';
+import AsyncStorage from '@react-native-community/async-storage';
 
 const image = require("../images/bkg.jpg");
 
@@ -10,17 +11,21 @@ export default class Signup extends Component {
 
   constructor() {
     super();
+
     this.state = {
       name: '',
       mobile: '',
       gender: 'male',
       city: '',
       dob: '',
-      pin: '',
+      loginPin: '',
+      otp: '',
       isLoading: false,
       isRegistered: null,
       isMobileVerified: null,
-      isOtpSent: false
+      isOtpSent: false,
+      isLoginPinCreated: false,
+      wrongOtp: false
     }
 
     this.db = firebase.firestore();
@@ -36,62 +41,84 @@ export default class Signup extends Component {
     this.setState({ isRegistered: this.props.route.params.verified });
   }
 
-  registerUser = () => {
+  async registerUser() {
     console.log('State = ', this.state);
 
     this.setState({
       isLoading: true
     });
 
-    this.db.collection("member_list").doc(this.state.mobile).set(this.state)
+    this.db.collection("member_list").doc(this.state.mobile).set({
+      mobile: this.state.mobile,
+      city: this.state.city,
+      name: this.state.name,
+      loginPin: this.state.loginPin,
+      dob: this.state.dob,
+      gender: this.state.gender
+    })
       .then(_ => {
+        AsyncStorage.setItem('loggedInMobile', this.state.mobile);
+
         this.props.navigation.navigate('Login', { mobile: this.state.mobile });
 
         this.setState({
-          isLoading: false,
-          name: '',
-          mobile: '',
-          gender: 'male',
-          city: '',
-          dob: '',
-          pin: ''
+          isLoading: false
         });
       })
       .catch(error => {
         console.log('Register error = ', error);
-        this.setState({ errorMessage: error.message });
       });
   }
 
   sendOtp() {
     console.log('Mobile = ', this.state.mobile);
 
-    this.db.collection("member_list").doc(this.state.mobile).set(this.state)
+    this.db.collection("member_list").doc(this.state.mobile).set({
+      otp: Math.floor((Math.random() * 10000) + 1)
+    })
       .then(_ => {
         this.setState({
           isOtpSent: true
         });
       })
       .catch(error => {
-        console.log('Register error = ', error);
+        console.log('Send otp error = ', error);
       });
   }
 
   verifyOtp() {
-    console.log('Mobile = ', this.state.mobile);
-
-    return;
-
-    this.db.collection("member_list").doc(this.state.mobile).set(this.state)
-      .then(_ => {
-        this.setState({
-          isOtpSent: true
-        });
+    this.db.collection("member_list").doc(this.state.mobile).get()
+      .then(doc => {
+        const data = doc.data();
+        if (data.otp == this.state.otp) {
+          this.setState({
+            isOtpSent: true,
+            wrongOtp: false,
+            isLoginPinCreated: true,
+          });
+        } else {
+          this.setState({
+            wrongOtp: true
+          });
+        }
       })
       .catch(error => {
-        console.log('Register error = ', error);
-        this.setState({ errorMessage: error.message });
+        console.log('Verify otp error = ', error);
       });
+  }
+
+  verifyPin() {
+    if (this.state.loginPin === this.state.loginPinVerify) {
+      this.setState({
+        isRegistered: true,
+        isLoginPinCreated: false,
+        wrongOtp: false
+      });
+    } else {
+      this.setState({
+        wrongOtp: true
+      });
+    }
   }
 
   render() {
@@ -106,7 +133,7 @@ export default class Signup extends Component {
       <View style={styles.container}>
         <ImageBackground source={image} style={styles.image}>
           <View style={styles.overlay}>
-            {!this.state.isRegistered &&
+            {(!this.state.isRegistered && !this.state.isOtpSent) &&
               <View>
                 <TextInput
                   style={styles.inputStyle}
@@ -120,16 +147,17 @@ export default class Signup extends Component {
                   title="Send OTP"
                   onPress={() => this.sendOtp()}
                 />
-
+{/* 
                 <Text
                   style={styles.loginText}
                   onPress={() => this.props.navigation.navigate('Login')}>
                   Already have an account? Click here to go to Login page.
-           </Text>
+           </Text> */}
               </View>
             }
 
-            {(!this.state.isRegistered && this.state.isOtpSent) &&
+            {(!this.state.isRegistered && this.state.isOtpSent
+              && !this.state.isLoginPinCreated) &&
               <View>
                 <TextInput
                   style={styles.inputStyle}
@@ -143,6 +171,41 @@ export default class Signup extends Component {
                   title="Verify OTP"
                   onPress={() => this.verifyOtp()}
                 />
+                {this.state.wrongOtp &&
+                  <Text>Wrong OTP please verify and try again</Text>
+                }
+              </View>
+            }
+
+            {(!this.state.isRegistered && this.state.isLoginPinCreated) &&
+              <View>
+                <TextInput
+                  style={styles.inputStyle}
+                  placeholder="Create login pin (4 digits)"
+                  keyboardType='numeric'
+                  value={this.state.loginPin}
+                  secureTextEntry={true}
+                  maxLength={4}
+                  onChangeText={(val) => this.updateInputVal(val, 'loginPin')}
+                />
+                <TextInput
+                  style={styles.inputStyle}
+                  placeholder="Re-enter login pin"
+                  keyboardType='numeric'
+                  value={this.state.loginPinVerify}
+                  secureTextEntry={true}
+                  maxLength={4}
+                  onChangeText={(val) => this.updateInputVal(val, 'loginPinVerify')}
+                />
+
+                <Button
+                  color="#3740FE"
+                  title="Verify OTP"
+                  onPress={() => this.verifyPin()}
+                />
+                {this.state.wrongOtp &&
+                  <Text>Wrong pin please verify and try again</Text>
+                }
               </View>
             }
 
@@ -174,14 +237,7 @@ export default class Signup extends Component {
                   value={this.state.city}
                   onChangeText={(val) => this.updateInputVal(val, 'city')}
                 />
-                <TextInput
-                  style={styles.inputStyle}
-                  placeholder="Create login pin (4 digits)"
-                  keyboardType='numeric'
-                  value={this.state.pin}
-                  secureTextEntry={true}
-                  onChangeText={(val) => this.updateInputVal(val, 'pin')}
-                />
+
                 <Button
                   color="#3740FE"
                   title="Sign Up"

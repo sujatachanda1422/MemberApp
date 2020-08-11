@@ -11,31 +11,24 @@ import {
     Alert
 } from 'react-native';
 import firebase from '../database/firebase';
+import AsyncStorage from '@react-native-community/async-storage';
 
 const image = require("../images/login.jpg");
+let userMobile = null;
 
 export default class Login extends Component {
 
     constructor() {
         super();
         this.state = {
-            mobile: '111',
-            pin: '1234',
+            mobile: '',
+            loginPin: '1234',
             isLoading: false
         }
     }
 
-    componentDidMount() {
-        try {
-            const registeredUserMobile = this.props.route.params.mobile;
-            if (registeredUserMobile) {
-                this.setState({ mobile: registeredUserMobile });
-            }
-        }
-
-        catch (err) {
-            console.log('Mobile not found');
-        }
+    async componentDidMount() {
+        userMobile = await AsyncStorage.getItem('loggedInMobile');
     }
 
     updateInputVal = (val: any, prop: any) => {
@@ -52,7 +45,7 @@ export default class Login extends Component {
         firebase
             .firestore()
             .collection("member_list")
-            .doc(this.state.mobile)
+            .doc(userMobile)
             .get()
             .then((querySnapshot) => {
                 const memberDetails = querySnapshot.data();
@@ -67,10 +60,10 @@ export default class Login extends Component {
                     return;
                 }
 
-                if (this.state.pin === memberDetails.pin) {
+                if (this.state.loginPin === memberDetails.loginPin) {
                     this.props.navigation.navigate('Home', { user: memberDetails });
                 } else {
-                    console.error('Wrong pin')
+                    console.error('Wrong loginPin');
                 }
             })
             .catch(error => {
@@ -101,15 +94,9 @@ export default class Login extends Component {
                         </View>
                         <TextInput
                             style={styles.inputStyle}
-                            placeholder="Mobile"
-                            value={this.state.mobile}
-                            onChangeText={(val) => this.updateInputVal(val, 'mobile')}
-                        />
-                        <TextInput
-                            style={styles.inputStyle}
                             placeholder="Pin"
-                            value={this.state.pin}
-                            onChangeText={(val) => this.updateInputVal(val, 'pin')}
+                            value={this.state.loginPin}
+                            onChangeText={(val) => this.updateInputVal(val, 'loginPin')}
                             maxLength={4}
                             secureTextEntry={true}
                         />
@@ -118,12 +105,12 @@ export default class Login extends Component {
                             title="Sign In"
                             onPress={() => this.userLogin()}
                         />
-
+                        {/* 
                         <Text
                             style={styles.loginText}
                             onPress={() => this.props.navigation.navigate('Register')}>
                             Don't have account? Click here to signup
-                 </Text>
+                      </Text> */}
                     </View>
                 </ImageBackground>
             </View>
