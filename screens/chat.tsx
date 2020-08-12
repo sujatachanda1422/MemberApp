@@ -39,7 +39,6 @@ export default class Chat extends Component {
   }
 
   UNSAFE_componentWillMount() {
-    console.log('State ', this.state);
     firebase
       .database()
       .ref('messages')
@@ -92,6 +91,23 @@ export default class Chat extends Component {
     batch.commit().then(function () {
       console.log('Chat db updated');
     });
+
+    if (this.props.route.params.isSubscribed) {
+      this.updateChatCountInDb();
+    }
+  }
+
+  updateChatCountInDb() {
+    this.db.collection("subscription_list")
+      .doc(this.state.person.loggedInMember.mobile)
+      .update({
+        remaining_chat: firebase.firestore.FieldValue.increment(-1)
+      })
+      .then(_ => {
+        console.log('Decremented chat count');
+      }).catch(error => {
+        console.log('Error = ', error);
+      });
   }
 
   sendMessage = async () => {

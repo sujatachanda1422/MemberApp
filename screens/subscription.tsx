@@ -97,6 +97,7 @@ export default class Subscription extends Component {
       accepted_by: '',
       remaining_chat: packageDetails.chatNumber,
       expiry_date: '',
+      name: this.props.route.params.user.name
     };
 
     console.log('Silder ', packageDoc);

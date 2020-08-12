@@ -70,16 +70,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  addBtn: {
-    color: '#000',
-    fontSize: 16,
-    marginRight: 20,
-    borderRadius: 2,
-    fontWeight: 'bold',
-    backgroundColor: '#ddd',
-    paddingHorizontal: 8,
-    paddingVertical: 5
-  },
-});

@@ -22,6 +22,22 @@ export default class Home extends Component {
     this.db = firebase.firestore();
   }
 
+  UNSAFE_componentWillReceiveProps() {
+    if (isUserLoggedIn) {
+      this.props.navigation.setOptions({
+        headerRight: () => (
+          <TouchableOpacity onPress={() => this.props.navigation.navigate('Profile',
+            { user: this.props.route.params.user }
+          )}>
+            <Text style={styles.addBtn}>
+              Profile
+            </Text>
+          </TouchableOpacity>
+        )
+      });
+    }
+  }
+
   async isLoggedIn() {
     loggedInUserMobile = await AsyncStorage.getItem('loggedInMobile');
 
@@ -56,7 +72,7 @@ export default class Home extends Component {
       });
   }
 
-  checkForSubscription(item: { mobile: firebase.firestore.DocumentData; }) {
+  onMemberClick(item: { mobile: firebase.firestore.DocumentData; }) {
     // For not registered user
     if (!isUserLoggedIn) {
       this.props.navigation.navigate('Register', { verified: false });
@@ -85,8 +101,38 @@ export default class Home extends Component {
               user: item
             });
         } else {
+          this.checkForSubscription(item);
+        }
+      })
+      .catch(error => {
+        console.log('Error = ', error);
+      });
+  }
+
+  checkForSubscription(clickedMember: { mobile: firebase.firestore.DocumentData; }) {
+    this.db.collection("subscription_list")
+      .doc(loggedInUserMobile)
+      .get()
+      .then((doc) => {
+        const docData: firebase.firestore.DocumentData = doc.data();
+
+        if (docData) {
+          const today = new Date().getTime();
+          const expiryDate = new Date(docData.expiry_date).getTime();
+        }
+
+        if (docData && (docData.status === 'accepted'
+          && today <= expiryDate && docData.remaining_chat != 0)) {
+          this.props.navigation.navigate('Chat',
+            {
+              from: this.props.route.params.user,
+              user: clickedMember,
+              isSubscribed: true
+            });
+        } else {
           this.props.navigation.navigate('Subscription', { user: this.props.route.params.user });
         }
+
       })
       .catch(error => {
         console.log('Error = ', error);
@@ -102,7 +148,7 @@ export default class Home extends Component {
           keyExtractor={(index) => index.mobile}
           renderItem={({ item }) =>
             <TouchableOpacity style={styles.item}
-              onPress={() => this.checkForSubscription(item)} >
+              onPress={() => this.onMemberClick(item)} >
               <View style={styles.listItem}>
                 <Text style={styles.listText}>
                   {item.name}
@@ -145,5 +191,15 @@ const styles = StyleSheet.create({
   listText: {
     textTransform: 'capitalize',
     lineHeight: 30
+  },
+  addBtn: {
+    color: '#000',
+    fontSize: 16,
+    marginRight: 20,
+    borderRadius: 2,
+    fontWeight: 'bold',
+    backgroundColor: '#ddd',
+    paddingHorizontal: 8,
+    paddingVertical: 5
   }
 });

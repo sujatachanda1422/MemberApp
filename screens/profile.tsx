@@ -30,7 +30,7 @@ export default class Profile extends Component {
   async updateUser() {
     
 
-    return;
+    // return;
 
     this.setState({
       isLoading: true
