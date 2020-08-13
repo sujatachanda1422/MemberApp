@@ -200,7 +200,7 @@ export default class Signup extends Component {
 
                 <Button
                   color="#3740FE"
-                  title="Verify OTP"
+                  title="Verify Pin"
                   onPress={() => this.verifyPin()}
                 />
                 {this.state.wrongOtp &&

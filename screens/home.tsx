@@ -4,7 +4,6 @@ import firebase from '../database/firebase';
 import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
 
-let isUserLoggedIn = false;
 let loggedInUserMobile: string | null | undefined = null;
 
 export default class Home extends Component {
@@ -23,7 +22,9 @@ export default class Home extends Component {
   }
 
   UNSAFE_componentWillReceiveProps() {
-    if (isUserLoggedIn) {
+    this.isLoggedIn();
+
+    if (loggedInUserMobile !== null) {
       this.props.navigation.setOptions({
         headerRight: () => (
           <TouchableOpacity onPress={() => this.props.navigation.navigate('Profile',
@@ -42,15 +43,14 @@ export default class Home extends Component {
     loggedInUserMobile = await AsyncStorage.getItem('loggedInMobile');
 
     console.log('loggedInMobile == ', loggedInUserMobile);
-
-    if (loggedInUserMobile !== null) {
-      isUserLoggedIn = true;
-      this.props.navigation.navigate('Login');
-    }
   }
 
-  async UNSAFE_componentWillMount() {
-    await this.isLoggedIn();
+  UNSAFE_componentWillMount() {
+    this.isLoggedIn();
+
+    if (loggedInUserMobile !== null) {
+      this.props.navigation.navigate('Login');
+    }
 
     this.db
       .collection("member_list")
@@ -74,7 +74,7 @@ export default class Home extends Component {
 
   onMemberClick(item: { mobile: firebase.firestore.DocumentData; }) {
     // For not registered user
-    if (!isUserLoggedIn) {
+    if (!loggedInUserMobile) {
       this.props.navigation.navigate('Register', { verified: false });
       return;
     }
