@@ -14,6 +14,7 @@ import firebase from '../database/firebase';
 import AsyncStorage from '@react-native-community/async-storage';
 
 const image = require("../images/login.jpg");
+const logo = require("../images/chat1.jpg");
 let userMobile = null;
 
 export default class Login extends Component {
@@ -86,11 +87,12 @@ export default class Login extends Component {
                     <View style={styles.overlay}>
                         <View style={{
                             flex: 1,
-                            justifyContent: 'center',
+                            // justifyContent: 'center',
                             alignItems: 'center',
                             marginTop: 20
                         }}>
-                            <Text style={{ position: 'absolute', fontSize: 20 }}>ChunMun</Text>
+                            <Image source={logo} style={{ marginTop: 10, width: 100, height: 100 }}></Image>
+                            <Text style={{ fontSize: 20 }}>ChunMun</Text>
                         </View>
                         <TextInput
                             style={styles.inputStyle}

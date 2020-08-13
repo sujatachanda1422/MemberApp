@@ -21,7 +21,7 @@ export default function App() {
             color: '#fff'
           },
           headerStyle: {
-            backgroundColor: '#0c2c94',
+            backgroundColor: '#3b8dbd',
           },
         }}>
         <Stack.Screen
@@ -38,18 +38,9 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={Home}
-          options={({ navigation, route }) => ({
-            title: 'Welcome',
-            // headerRight: () => (
-            //   <TouchableOpacity onPress={() => navigation.navigate('Profile',
-            //     { user: route.params.user }
-            //   )}>
-            //     <Text style={styles.addBtn}>
-            //       Profile
-            //     </Text>
-            //   </TouchableOpacity>
-            // )
-          })}
+          options={{
+            title: 'ChunMun'
+          }}
         />
         <Stack.Screen
           name="Chat"

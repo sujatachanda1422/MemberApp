@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
 import firebase from '../database/firebase';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
 
+const image = require("../images/bkg_home.png");
 let loggedInUserMobile: string | null | undefined = null;
 
 export default class Home extends Component {
@@ -21,8 +22,8 @@ export default class Home extends Component {
     this.db = firebase.firestore();
   }
 
-  UNSAFE_componentWillReceiveProps() {
-    this.isLoggedIn();
+  async UNSAFE_componentWillReceiveProps() {
+    await this.isLoggedIn();
 
     if (loggedInUserMobile !== null) {
       this.props.navigation.setOptions({
@@ -30,9 +31,7 @@ export default class Home extends Component {
           <TouchableOpacity onPress={() => this.props.navigation.navigate('Profile',
             { user: this.props.route.params.user }
           )}>
-            <Text style={styles.addBtn}>
-              Profile
-            </Text>
+            <FontAwesome5 style={styles.addBtn} name="user-edit" size={24} color="black" />
           </TouchableOpacity>
         )
       });
@@ -45,12 +44,30 @@ export default class Home extends Component {
     console.log('loggedInMobile == ', loggedInUserMobile);
   }
 
-  UNSAFE_componentWillMount() {
-    this.isLoggedIn();
+  async UNSAFE_componentWillMount() {
+    await this.isLoggedIn();
 
     if (loggedInUserMobile !== null) {
       this.props.navigation.navigate('Login');
     }
+
+    // this.setState({
+    //   memberList: [{
+    //     name: 'dsadsada',
+    //     city: 'dsadsada'
+    //   }, {
+    //     name: 'dsadsada',
+    //     city: 'dsadsada'
+    //   }, {
+    //     name: 'dsadsada',
+    //     city: 'dsadsada'
+    //   }, {
+    //     name: 'dsadsada',
+    //     city: 'dsadsada'
+    //   }]
+    // });
+
+    // return;
 
     this.db
       .collection("member_list")
@@ -142,24 +159,28 @@ export default class Home extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <FlatList
-          data={this.state.memberList}
-          width='100%'
-          keyExtractor={(index) => index.mobile}
-          renderItem={({ item }) =>
-            <TouchableOpacity style={styles.item}
-              onPress={() => this.onMemberClick(item)} >
-              <View style={styles.listItem}>
-                <Text style={styles.listText}>
-                  {item.name}
-                </Text>
-                <Text style={styles.listText}>City: {item.city}</Text>
-              </View>
-              <View>
-                <AntDesign name="right" size={24} color="black" />
-              </View>
-            </TouchableOpacity>}
-        />
+        <ImageBackground source={image} style={styles.image}>
+          <View style={styles.overlay}>
+            <FlatList
+              data={this.state.memberList}
+              width='100%'
+              keyExtractor={(index) => index.mobile}
+              renderItem={({ item }) =>
+                <TouchableOpacity style={styles.item}
+                  onPress={() => this.onMemberClick(item)} >
+                  <View style={styles.listItem}>
+                    <Text style={styles.nameText}>
+                      {item.name}
+                    </Text>
+                    <Text style={styles.listText}>From {item.city}</Text>
+                  </View>
+                  <View>
+                    <AntDesign name="right" size={24} color="#dcdcdc" />
+                  </View>
+                </TouchableOpacity>}
+            />
+          </View>
+        </ImageBackground>
       </View>
     );
   }
@@ -168,17 +189,23 @@ export default class Home extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    display: "flex",
-    backgroundColor: '#aac8dc'
+    display: "flex"
+  },
+  overlay: {
+    backgroundColor: 'rgba(199,199,199,0.3)',
+    height: '100%',
+    flexDirection: "column",
+    justifyContent: "center",
+    padding: 20
+  },
+  image: {
+    flex: 1,
+    justifyContent: "center"
   },
   item: {
     paddingHorizontal: 10,
     borderColor: '#868181',
-    borderWidth: 1,
-    marginLeft: 10,
-    marginTop: 10,
-    marginRight: 10,
-    borderRadius: 4,
+    marginBottom: 20,
     backgroundColor: '#fff',
     display: 'flex',
     flexDirection: 'row',
@@ -192,13 +219,16 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
     lineHeight: 30
   },
+  nameText: {
+    textTransform: 'capitalize',
+    lineHeight: 30,
+    color: 'green',
+    fontSize: 18,
+    fontWeight: 'bold'
+  },
   addBtn: {
-    color: '#000',
-    fontSize: 16,
-    marginRight: 20,
-    borderRadius: 2,
-    fontWeight: 'bold',
-    backgroundColor: '#ddd',
+    color: '#ffff',
+    marginRight: 10,
     paddingHorizontal: 8,
     paddingVertical: 5
   }

@@ -144,7 +144,7 @@ export default class Subscription extends Component {
       <View style={styles.container}>
         <CardSilder style={{ marginTop: 30 }} onPackageChange={this.setPackage}>
           {this.state.packages.map(((item) => (
-            <View key={item.id} style={[styles.package, this.getPackageColor(item)]}
+            <View key={item.name} style={[styles.package, this.getPackageColor(item)]}
             >
               <Text style={[styles.packageText, { textTransform: 'capitalize' }]}>
                 {item.name}
