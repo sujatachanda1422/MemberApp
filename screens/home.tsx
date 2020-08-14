@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
+import { StyleSheet, View, Text, FlatList, TouchableOpacity, ImageBackground, Image } from 'react-native';
 import firebase from '../database/firebase';
 import { AntDesign, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
 
 const image = require("../images/bkg_home.png");
+const userImg = require("../images/user.jpg");
 let loggedInUserMobile: string | null | undefined = null;
 
 export default class Home extends Component {
@@ -168,14 +169,19 @@ export default class Home extends Component {
               renderItem={({ item }) =>
                 <TouchableOpacity style={styles.item}
                   onPress={() => this.onMemberClick(item)} >
-                  <View style={styles.listItem}>
-                    <Text style={styles.nameText}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.listText}>From {item.city}</Text>
-                  </View>
-                  <View>
-                    <AntDesign name="right" size={24} color="#dcdcdc" />
+                  <View style={styles.listItemWrapper}>
+                    <View style={styles.listItem}>
+                      <Image source={(item.image && item.image !== '') ? item.image : userImg} style={styles.profileImg} />
+                      <View style={{ paddingLeft: 40 }}>
+                        <Text style={styles.nameText}>
+                          {item.name}
+                        </Text>
+                        <Text style={styles.listText}>From {item.city}</Text>
+                      </View>
+                    </View>
+                    <View style={{ position: 'absolute', right: 10 }}>
+                      <AntDesign name="right" size={24} color="#dcdcdc" />
+                    </View>
                   </View>
                 </TouchableOpacity>}
             />
@@ -200,20 +206,34 @@ const styles = StyleSheet.create({
   },
   image: {
     flex: 1,
-    justifyContent: "center"
+    justifyContent: "center",
+    zIndex: 10
+  },
+  profileImg: {
+    width: 50,
+    height: 50,
+    borderRadius: 30,
+    marginLeft: -25,
+    position: 'absolute'
   },
   item: {
     paddingHorizontal: 10,
     borderColor: '#868181',
     marginBottom: 20,
-    backgroundColor: '#fff',
+  },
+  listItemWrapper: {
     display: 'flex',
+    paddingLeft: 15,
     flexDirection: 'row',
     alignItems: 'center'
   },
   listItem: {
+    display: 'flex',
+    paddingVertical: 15,
+    marginBottom: 6,
     flex: 1,
-    marginBottom: 6
+    backgroundColor: '#fff',
+    justifyContent: 'center'
   },
   listText: {
     textTransform: 'capitalize',

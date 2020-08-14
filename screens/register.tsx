@@ -1,16 +1,33 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, Text, TextInput, Button, ActivityIndicator, ImageBackground } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  Button,
+  ActivityIndicator,
+  ImageBackground,
+  TouchableOpacity,
+  Alert,
+  Image
+} from 'react-native';
 import firebase from '../database/firebase';
 import { RadioButton } from 'react-native-paper';
 import AsyncStorage from '@react-native-community/async-storage';
+import RNDateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
+import RNFetchBlob from 'react-native-fetch-blob';
 
 const image = require("../images/bkg.jpg");
 
 export default class Signup extends Component {
   db: firebase.firestore.Firestore;
+  date: null;
 
   constructor() {
     super();
+    const dateNow = new Date();
+    this.date = new Date(dateNow.getFullYear() - 18, dateNow.getMonth(), dateNow.getDate());
 
     this.state = {
       name: '',
@@ -18,20 +35,23 @@ export default class Signup extends Component {
       gender: 'male',
       city: '',
       dob: '',
+      image: null,
+      setDob: this.date,
       loginPin: '',
       otp: '',
       isLoading: false,
-      isRegistered: null,
+      isRegistered: true,
       isMobileVerified: null,
       isOtpSent: false,
       isLoginPinCreated: false,
-      wrongOtp: false
+      wrongOtp: false,
+      showDatePicker: false
     }
 
     this.db = firebase.firestore();
   }
 
-  updateInputVal = (val, prop) => {
+  updateInputVal = (val: any, prop: string | number) => {
     const state = this.state;
     state[prop] = val;
     this.setState(state);
@@ -42,8 +62,6 @@ export default class Signup extends Component {
   }
 
   async registerUser() {
-    console.log('State = ', this.state);
-
     this.setState({
       isLoading: true
     });
@@ -54,7 +72,8 @@ export default class Signup extends Component {
       name: this.state.name,
       loginPin: this.state.loginPin,
       dob: this.state.dob,
-      gender: this.state.gender
+      gender: this.state.gender,
+      image: this.state.image
     })
       .then(_ => {
         AsyncStorage.setItem('loggedInMobile', this.state.mobile);
@@ -121,6 +140,78 @@ export default class Signup extends Component {
     }
   }
 
+  setDob(date: Date | undefined) {
+    if (!date) {
+      return;
+    }
+
+    const dateNow = new Date(this.date).getTime();
+    const selectedDate = new Date(date).getTime();
+
+    if (selectedDate < dateNow) {
+      this.setState({
+        dob: new Date(date).toLocaleDateString('en-US'),
+        showDatePicker: false
+      });
+    } else {
+      Alert.alert('', 'Age needs to be 18 years+',
+        [
+          {
+            text: 'OK',
+            onPress: () => this.setState({
+              dob: '',
+              showDatePicker: false
+            })
+          }
+        ]);
+    }
+  }
+
+  pickImage = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        base64: true,
+        quality: 0.1
+      });
+
+      if (!result.cancelled) {
+        this.setState({ isLoading: true });
+
+        const blob = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = function () {
+            resolve(xhr.response);
+          };
+          xhr.onerror = function () {
+            reject(new TypeError("Network request failed"));
+          };
+          xhr.responseType = "blob";
+          xhr.open("GET", result.uri, true);
+          xhr.send(null);
+        });
+
+        var mimeString = result.uri
+          .split(",")[0]
+          .split(":")[1]
+          .split(";")[0];
+
+        let storageRef = firebase.storage().ref();
+        var imageRef = storageRef.child(`images/${this.state.mobile}.jpg`);
+        const snapshot = await imageRef.put(blob, { contentType: mimeString });
+        let url = await snapshot.ref.getDownloadURL();
+
+        this.setState({ image: url, isLoading: false });
+
+        console.log('Url', url);
+      }
+    } catch (err) {
+      console.log('Image picker err = ', err);
+    }
+  };
+
   render() {
     if (this.state.isLoading) {
       return (
@@ -147,7 +238,7 @@ export default class Signup extends Component {
                   title="Send OTP"
                   onPress={() => this.sendOtp()}
                 />
-{/* 
+                {/* 
                 <Text
                   style={styles.loginText}
                   onPress={() => this.props.navigation.navigate('Login')}>
@@ -210,7 +301,7 @@ export default class Signup extends Component {
             }
 
             {this.state.isRegistered &&
-              <View style={styles.overlay}>
+              <View>
                 <TextInput
                   style={styles.inputStyle}
                   placeholder="Full Name"
@@ -225,18 +316,32 @@ export default class Signup extends Component {
                     <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
                   </View>
                 </RadioButton.Group>
-                <TextInput
+                <TouchableOpacity
                   style={styles.inputStyle}
-                  placeholder="Date of Birth"
-                  value={this.state.dob}
-                  onChangeText={(val) => this.updateInputVal(val, 'dob')}
-                />
+                  onPress={() => this.setState({ showDatePicker: true })}
+                >
+                  <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
+                </TouchableOpacity>
+                {this.state.showDatePicker &&
+                  <RNDateTimePicker
+                    value={this.state.setDob}
+                    onChange={(evt, date) => this.setDob(date)}
+                  />
+                }
                 <TextInput
                   style={styles.inputStyle}
                   placeholder="City"
                   value={this.state.city}
                   onChangeText={(val) => this.updateInputVal(val, 'city')}
                 />
+
+                <View style={{ marginBottom: 20 }}>
+                  <Button title="Pick an image from camera roll" onPress={this.pickImage} />
+                  {this.state.image &&
+                    <Image source={{ uri: this.state.image }}
+                      style={{ marginTop: 20, width: 200, height: 200 }} />
+                  }
+                </View>
 
                 <Button
                   color="#3740FE"
@@ -260,11 +365,11 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   overlay: {
-    backgroundColor: 'rgba(199,199,199,0.3)',
+    backgroundColor: 'rgba(199,199,199,0.4)',
     height: '100%',
     flexDirection: "column",
     justifyContent: "center",
-    padding: 20,
+    padding: 20
   },
   image: {
     flex: 1,

@@ -106,7 +106,7 @@ export default class Subscription extends Component {
       .doc(packageDoc.member_mobile)
       .set(packageDoc)
       .then(_ => {
-        alert('Thank you for subscribing. Your account will be updated soon.');
+        console.log('Thank you for subscribing. Your account will be updated soon.');
 
         Alert.alert('', 'Thank you for subscribing. Your account will be updated soon.',
           [

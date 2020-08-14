@@ -87,11 +87,11 @@ export default class Login extends Component {
                     <View style={styles.overlay}>
                         <View style={{
                             flex: 1,
-                            // justifyContent: 'center',
+                            justifyContent: 'center',
                             alignItems: 'center',
                             marginTop: 20
                         }}>
-                            <Image source={logo} style={{ marginTop: 10, width: 100, height: 100 }}></Image>
+                            {/* <Image source={logo} style={{ marginTop: 10, width: 100, height: 100 }}></Image> */}
                             <Text style={{ fontSize: 20 }}>ChunMun</Text>
                         </View>
                         <TextInput
