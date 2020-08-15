@@ -15,7 +15,6 @@ import AsyncStorage from '@react-native-community/async-storage';
 
 const image = require("../images/login.jpg");
 const logo = require("../images/chat1.jpg");
-let userMobile = null;
 
 export default class Login extends Component {
 
@@ -29,7 +28,11 @@ export default class Login extends Component {
     }
 
     async componentDidMount() {
-        userMobile = await AsyncStorage.getItem('loggedInMobile');
+        this.setState({mobile: this.props.route.params.mobile});
+    }
+
+    async UNSAFE_componentWillReceiveProps() {
+        this.setState({mobile: this.props.route.params.mobile});
     }
 
     updateInputVal = (val: any, prop: any) => {
@@ -46,7 +49,7 @@ export default class Login extends Component {
         firebase
             .firestore()
             .collection("member_list")
-            .doc(userMobile)
+            .doc(this.state.mobile)
             .get()
             .then((querySnapshot) => {
                 const memberDetails = querySnapshot.data();
@@ -62,6 +65,8 @@ export default class Login extends Component {
                 }
 
                 if (this.state.loginPin === memberDetails.loginPin) {
+                    AsyncStorage.setItem('loggedInMobile', this.state.mobile);
+
                     this.props.navigation.navigate('Home', { user: memberDetails });
                 } else {
                     console.error('Wrong loginPin');
@@ -94,6 +99,15 @@ export default class Login extends Component {
                             {/* <Image source={logo} style={{ marginTop: 10, width: 100, height: 100 }}></Image> */}
                             <Text style={{ fontSize: 20 }}>ChunMun</Text>
                         </View>
+                        {!this.state.mobile &&
+                            <TextInput
+                                style={styles.inputStyle}
+                                placeholder="Mobile"
+                                value={this.state.mobile}
+                                onChangeText={(val) => this.updateInputVal(val, 'mobile')}
+                                maxLength={10}
+                            />
+                        }
                         <TextInput
                             style={styles.inputStyle}
                             placeholder="Pin"

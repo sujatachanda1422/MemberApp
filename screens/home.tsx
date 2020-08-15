@@ -1,5 +1,14 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ImageBackground, Image } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ImageBackground,
+  Image,
+  ScrollView
+} from 'react-native';
 import firebase from '../database/firebase';
 import { AntDesign, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -49,7 +58,7 @@ export default class Home extends Component {
     await this.isLoggedIn();
 
     if (loggedInUserMobile !== null) {
-      this.props.navigation.navigate('Login');
+      this.props.navigation.navigate('Login', { mobile: loggedInUserMobile });
     }
 
     // this.setState({
@@ -86,7 +95,7 @@ export default class Home extends Component {
 
         this.setState({ memberList: [...this.memberArray] });
 
-        console.log('Data = ', this.memberArray);
+        // console.log('Data = ', this.memberArray);
       });
   }
 
@@ -133,11 +142,16 @@ export default class Home extends Component {
       .get()
       .then((doc) => {
         const docData: firebase.firestore.DocumentData = doc.data();
+        const today = new Date().getTime();
+        let expiryDate;
 
         if (docData) {
-          const today = new Date().getTime();
-          const expiryDate = new Date(docData.expiry_date).getTime();
+          expiryDate = new Date(docData.expiry_date).getTime();
         }
+
+        console.log("check........", (docData.status === 'accepted'
+          && today <= expiryDate && docData.remaining_chat != 0));
+
 
         if (docData && (docData.status === 'accepted'
           && today <= expiryDate && docData.remaining_chat != 0)) {
@@ -161,31 +175,33 @@ export default class Home extends Component {
     return (
       <View style={styles.container}>
         <ImageBackground source={image} style={styles.image}>
-          <View style={styles.overlay}>
-            <FlatList
-              data={this.state.memberList}
-              width='100%'
-              keyExtractor={(index) => index.mobile}
-              renderItem={({ item }) =>
-                <TouchableOpacity style={styles.item}
-                  onPress={() => this.onMemberClick(item)} >
-                  <View style={styles.listItemWrapper}>
-                    <View style={styles.listItem}>
-                      <Image source={(item.image && item.image !== '') ? item.image : userImg} style={styles.profileImg} />
-                      <View style={{ paddingLeft: 40 }}>
-                        <Text style={styles.nameText}>
-                          {item.name}
-                        </Text>
-                        <Text style={styles.listText}>From {item.city}</Text>
+          <ScrollView style={{ flex: 1 }}>
+            <View style={styles.overlay}>
+              <FlatList
+                data={this.state.memberList}
+                width='100%'
+                keyExtractor={(index) => index.mobile}
+                renderItem={({ item }) =>
+                  <TouchableOpacity style={styles.item}
+                    onPress={() => this.onMemberClick(item)} >
+                    <View style={styles.listItemWrapper}>
+                      <View style={styles.listItem}>
+                        <Image source={(item.image && item.image !== '') ? { uri: item.image } : userImg} style={styles.profileImg} />
+                        <View style={{ paddingLeft: 40 }}>
+                          <Text style={styles.nameText}>
+                            {item.name}
+                          </Text>
+                          <Text style={styles.listText}>From {item.city}</Text>
+                        </View>
+                      </View>
+                      <View style={{ position: 'absolute', right: 10 }}>
+                        <AntDesign name="right" size={24} color="#dcdcdc" />
                       </View>
                     </View>
-                    <View style={{ position: 'absolute', right: 10 }}>
-                      <AntDesign name="right" size={24} color="#dcdcdc" />
-                    </View>
-                  </View>
-                </TouchableOpacity>}
-            />
-          </View>
+                  </TouchableOpacity>}
+              />
+            </View>
+          </ScrollView>
         </ImageBackground>
       </View>
     );
@@ -229,7 +245,7 @@ const styles = StyleSheet.create({
   },
   listItem: {
     display: 'flex',
-    paddingVertical: 15,
+    paddingVertical: 5,
     marginBottom: 6,
     flex: 1,
     backgroundColor: '#fff',

@@ -15,8 +15,7 @@ import firebase from '../database/firebase';
 import { RadioButton } from 'react-native-paper';
 import AsyncStorage from '@react-native-community/async-storage';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
-import * as ImagePicker from 'expo-image-picker';
-import RNFetchBlob from 'react-native-fetch-blob';
+import ImagePicker from 'react-native-image-picker';
 
 const image = require("../images/bkg.jpg");
 
@@ -61,7 +60,7 @@ export default class Signup extends Component {
     this.setState({ isRegistered: this.props.route.params.verified });
   }
 
-  async registerUser() {
+  registerUser() {
     this.setState({
       isLoading: true
     });
@@ -76,8 +75,6 @@ export default class Signup extends Component {
       image: this.state.image
     })
       .then(_ => {
-        AsyncStorage.setItem('loggedInMobile', this.state.mobile);
-
         this.props.navigation.navigate('Login', { mobile: this.state.mobile });
 
         this.setState({
@@ -167,49 +164,57 @@ export default class Signup extends Component {
     }
   }
 
-  pickImage = async () => {
-    try {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        base64: true,
-        quality: 0.1
-      });
+  async pickImage() {
+    const options = {
+      title: 'Select Profile Picture'
+    };
 
-      if (!result.cancelled) {
-        this.setState({ isLoading: true });
+    ImagePicker.showImagePicker(options, async (response) => {
+      // console.log('Response = ', response);
 
-        const blob = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.onload = function () {
-            resolve(xhr.response);
-          };
-          xhr.onerror = function () {
-            reject(new TypeError("Network request failed"));
-          };
-          xhr.responseType = "blob";
-          xhr.open("GET", result.uri, true);
-          xhr.send(null);
-        });
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.error) {
+        console.log('ImagePicker Error: ', response.error);
+      } else if (response.customButton) {
+        console.log('User tapped custom button: ', response.customButton);
+      } else {
+        try {
+          this.setState({ isLoading: true });
 
-        var mimeString = result.uri
-          .split(",")[0]
-          .split(":")[1]
-          .split(";")[0];
+          const blob = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+              resolve(xhr.response);
+            };
+            xhr.onerror = function () {
+              reject(new TypeError("Network request failed"));
+            };
+            xhr.responseType = "blob";
+            xhr.open("GET", response.uri, true);
+            xhr.send(null);
+          });
 
-        let storageRef = firebase.storage().ref();
-        var imageRef = storageRef.child(`images/${this.state.mobile}.jpg`);
-        const snapshot = await imageRef.put(blob, { contentType: mimeString });
-        let url = await snapshot.ref.getDownloadURL();
+          const mimeString = response.uri
+            .split(",")[0]
+            .split(":")[1]
+            .split(";")[0];
 
-        this.setState({ image: url, isLoading: false });
+          let storageRef = firebase.storage().ref();
+          var imageRef = storageRef.child(`images/${this.state.mobile}.jpg`);
+          const snapshot = await imageRef.put(blob, { contentType: mimeString });
 
-        console.log('Url', url);
+          let url = await snapshot.ref.getDownloadURL();
+
+          console.log('Url', url);
+
+          this.setState({ image: url, isLoading: false });
+        }
+        catch (err) {
+          console.log("Img err ..........", err);
+        }
       }
-    } catch (err) {
-      console.log('Image picker err = ', err);
-    }
+    });
   };
 
   render() {
@@ -238,12 +243,12 @@ export default class Signup extends Component {
                   title="Send OTP"
                   onPress={() => this.sendOtp()}
                 />
-                {/* 
+
                 <Text
                   style={styles.loginText}
                   onPress={() => this.props.navigation.navigate('Login')}>
-                  Already have an account? Click here to go to Login page.
-           </Text> */}
+                  Already have an account?
+                 </Text>
               </View>
             }
 
@@ -336,7 +341,7 @@ export default class Signup extends Component {
                 />
 
                 <View style={{ marginBottom: 20 }}>
-                  <Button title="Pick an image from camera roll" onPress={this.pickImage} />
+                  <Button title="Pick an image from camera roll" onPress={() => this.pickImage()} />
                   {this.state.image &&
                     <Image source={{ uri: this.state.image }}
                       style={{ marginTop: 20, width: 200, height: 200 }} />
