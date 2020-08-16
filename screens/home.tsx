@@ -147,10 +147,10 @@ export default class Home extends Component {
 
         if (docData) {
           expiryDate = new Date(docData.expiry_date).getTime();
-        }
 
-        console.log("check........", (docData.status === 'accepted'
+          console.log("check........", (docData.status === 'accepted'
           && today <= expiryDate && docData.remaining_chat != 0));
+        }
 
 
         if (docData && (docData.status === 'accepted'

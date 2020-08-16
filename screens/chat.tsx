@@ -155,12 +155,6 @@ export default class Chat extends Component {
   renderRow = ({ item, index }) => {
     const isSenderSame = this.isSenderSame(item, this.state.messageList[index - 1]);
     const isFromLoggedInUser = item.from === this.state.person.from;
-    let time = this.convertTime(item.time);
-    let isSameTime = false;
-
-    if (isSenderSame) {
-      isSameTime = time === this.convertTime(this.state.messageList[index - 1].time);
-    }
 
     return (
       <View
@@ -188,7 +182,7 @@ export default class Chat extends Component {
             {item.message}
           </Text>
           <Text style={{
-            color: '#e6e6e6', marginTop: -10, fontSize: 12,
+            color: '#e6e6e6', marginTop: 0, fontSize: 12,
             alignSelf: isFromLoggedInUser ? 'flex-end' : 'flex-start'
           }}>
             {this.convertTime(item.time)}

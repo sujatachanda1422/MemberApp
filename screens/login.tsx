@@ -23,16 +23,27 @@ export default class Login extends Component {
         this.state = {
             mobile: '',
             loginPin: '1234',
-            isLoading: false
+            isLoading: false,
+            hasAccount: false
         }
     }
 
-    async componentDidMount() {
-        this.setState({mobile: this.props.route.params.mobile});
+    componentDidMount() {
+        if (this.props.route.params) {
+            this.setState({
+                hasAccount: true,
+                mobile: this.props.route.params.mobile
+            });
+        }
     }
 
-    async UNSAFE_componentWillReceiveProps() {
-        this.setState({mobile: this.props.route.params.mobile});
+    UNSAFE_componentWillReceiveProps() {
+        if (this.props.route.params) {
+            this.setState({
+                hasAccount: true,
+                mobile: this.props.route.params.mobile
+            });
+        }
     }
 
     updateInputVal = (val: any, prop: any) => {
@@ -53,7 +64,6 @@ export default class Login extends Component {
             .get()
             .then((querySnapshot) => {
                 const memberDetails = querySnapshot.data();
-                console.log('Query - ', memberDetails);
 
                 this.setState({
                     isLoading: false
@@ -99,7 +109,7 @@ export default class Login extends Component {
                             {/* <Image source={logo} style={{ marginTop: 10, width: 100, height: 100 }}></Image> */}
                             <Text style={{ fontSize: 20 }}>ChunMun</Text>
                         </View>
-                        {!this.state.mobile &&
+                        {!this.state.hasAccount &&
                             <TextInput
                                 style={styles.inputStyle}
                                 placeholder="Mobile"
