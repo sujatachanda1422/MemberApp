@@ -47,7 +47,7 @@ export default class Chat extends Component {
       .child(this.state.person.from)
       .child(this.state.person.to)
       .on('child_added', value => {
-        console.log("Old chats == ", value.val());
+        // console.log("Old chats == ", value.val());
 
         this.setState(prevState => {
           return {
@@ -66,8 +66,8 @@ export default class Chat extends Component {
     let c = new Date();
     let result = (d.getHours() < 10 ? '0' : '') + d.getHours() + ':';
     result += (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
-    if (c.getDay() !== d.getDay()) {
-      result = d.getDay() + ' ' + d.getMonth() + ' ' + result;
+    if (c.getDate() !== d.getDate()) {
+      result = d.getDate() + '/' + (d.getMonth() + 1) + ' ' + result;
     }
     return result;
   }
@@ -195,14 +195,13 @@ export default class Chat extends Component {
   render() {
     return (
       <View style={{ display: "flex", flexDirection: 'column', height: '100%' }}>
-        <ScrollView style={{ flex: 1 }}>
-          <FlatList
-            style={{ padding: 10 }}
-            data={this.state.messageList}
-            renderItem={this.renderRow}
-            keyExtractor={(item, index) => index.toString()}
-          />
-        </ScrollView>
+        <FlatList
+          contentContainerStyle={{ paddingVertical: 10 }}
+          style={{ paddingHorizontal: 10}}
+          data={this.state.messageList}
+          renderItem={this.renderRow}
+          keyExtractor={(item, index) => index.toString()}
+        />
         <View
           style={{
             flexDirection: 'row',

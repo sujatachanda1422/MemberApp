@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   ImageBackground,
   Image,
-  ScrollView
+  ScrollView,
+  Alert
 } from 'react-native';
 import firebase from '../database/firebase';
 import { AntDesign, FontAwesome5 } from '@expo/vector-icons';
@@ -45,7 +46,32 @@ export default class Home extends Component {
           </TouchableOpacity>
         )
       });
+
+      this.getMemberList();
     }
+  }
+
+  getMemberList() {
+    this.db
+      .collection("member_list")
+      .get().then((querySnapshot) => {
+        let docData;
+
+        // Reset data
+        this.memberArray = [];
+        this.setState({ memberList: [] });
+
+        querySnapshot.forEach((doc) => {
+          docData = doc.data();
+
+          if ((!loggedInUserMobile || docData.mobile !== loggedInUserMobile)
+            && docData.name) {
+            this.memberArray.push(docData);
+          }
+        });
+
+        this.setState({ memberList: [...this.memberArray] });
+      });
   }
 
   async isLoggedIn() {
@@ -59,44 +85,10 @@ export default class Home extends Component {
 
     if (loggedInUserMobile !== null) {
       this.props.navigation.navigate('Login', { mobile: loggedInUserMobile });
+      return;
     }
 
-    // this.setState({
-    //   memberList: [{
-    //     name: 'dsadsada',
-    //     city: 'dsadsada'
-    //   }, {
-    //     name: 'dsadsada',
-    //     city: 'dsadsada'
-    //   }, {
-    //     name: 'dsadsada',
-    //     city: 'dsadsada'
-    //   }, {
-    //     name: 'dsadsada',
-    //     city: 'dsadsada'
-    //   }]
-    // });
-
-    // return;
-
-    this.db
-      .collection("member_list")
-      .get().then((querySnapshot) => {
-        let docData;
-
-        querySnapshot.forEach((doc) => {
-          docData = doc.data();
-
-          if ((!loggedInUserMobile || docData.mobile !== loggedInUserMobile)
-            && docData.name) {
-            this.memberArray.push(docData);
-          }
-        });
-
-        this.setState({ memberList: [...this.memberArray] });
-
-        // console.log('Data = ', this.memberArray);
-      });
+    this.getMemberList();
   }
 
   onMemberClick(item: { mobile: firebase.firestore.DocumentData; }) {
@@ -136,35 +128,56 @@ export default class Home extends Component {
       });
   }
 
+  showSubscriptionError(msg: string) {
+    Alert.alert('', msg,
+      [
+        {
+          text: 'OK',
+          onPress: () => this.props.navigation.navigate('Subscription',
+            {
+              user: this.props.route.params.user
+            })
+        },
+        {
+          text: 'Cancel'
+        }
+      ]);
+  }
+
   checkForSubscription(clickedMember: { mobile: firebase.firestore.DocumentData; }) {
     this.db.collection("subscription_list")
       .doc(loggedInUserMobile)
       .get()
       .then((doc) => {
         const docData: firebase.firestore.DocumentData = doc.data();
-        const today = new Date().getTime();
-        let expiryDate;
+        // console.log('Docdata = ', docData);
 
         if (docData) {
-          expiryDate = new Date(docData.expiry_date).getTime();
+          if (docData.status === 'accepted') {
+            const today = new Date().getTime();
+            const expiryDate = new Date(docData.expiry_date).getTime();
 
-          console.log("check........", (docData.status === 'accepted'
-          && today <= expiryDate && docData.remaining_chat != 0));
-        }
-
-
-        if (docData && (docData.status === 'accepted'
-          && today <= expiryDate && docData.remaining_chat != 0)) {
-          this.props.navigation.navigate('Chat',
-            {
-              from: this.props.route.params.user,
-              user: clickedMember,
-              isSubscribed: true
-            });
+            if (today > expiryDate) {
+              this.showSubscriptionError('Your subscription has been expired, please re-subscribe again.');
+            } else if (!docData.remaining_chat) {
+              this.showSubscriptionError('Your chat limit has exhausted, please re-subscribe again.');
+            } else if (docData.remaining_chat) {
+              this.props.navigation.navigate('Chat',
+                {
+                  from: this.props.route.params.user,
+                  user: clickedMember,
+                  isSubscribed: true
+                });
+            }
+          } else if (docData.status === 'pending') {
+            Alert.alert('', 'Your subscription request is under pending state and you will be notified once its approved. Thank you!');
+          }
         } else {
-          this.props.navigation.navigate('Subscription', { user: this.props.route.params.user });
+          this.props.navigation.navigate('Subscription',
+            {
+              user: this.props.route.params.user
+            });
         }
-
       })
       .catch(error => {
         console.log('Error = ', error);
@@ -175,33 +188,31 @@ export default class Home extends Component {
     return (
       <View style={styles.container}>
         <ImageBackground source={image} style={styles.image}>
-          <ScrollView style={{ flex: 1 }}>
-            <View style={styles.overlay}>
-              <FlatList
-                data={this.state.memberList}
-                width='100%'
-                keyExtractor={(index) => index.mobile}
-                renderItem={({ item }) =>
-                  <TouchableOpacity style={styles.item}
-                    onPress={() => this.onMemberClick(item)} >
-                    <View style={styles.listItemWrapper}>
-                      <View style={styles.listItem}>
-                        <Image source={(item.image && item.image !== '') ? { uri: item.image } : userImg} style={styles.profileImg} />
-                        <View style={{ paddingLeft: 40 }}>
-                          <Text style={styles.nameText}>
-                            {item.name}
-                          </Text>
-                          <Text style={styles.listText}>From {item.city}</Text>
-                        </View>
-                      </View>
-                      <View style={{ position: 'absolute', right: 10 }}>
-                        <AntDesign name="right" size={24} color="#dcdcdc" />
+          <View style={styles.overlay}>
+            <FlatList
+              style={styles.flatList}
+              data={this.state.memberList}
+              keyExtractor={(index) => index.mobile}
+              renderItem={({ item }) =>
+                <TouchableOpacity style={styles.item}
+                  onPress={() => this.onMemberClick(item)} >
+                  <View style={styles.listItemWrapper}>
+                    <View style={styles.listItem}>
+                      <Image source={(item.image && item.image !== '') ? { uri: item.image } : userImg} style={styles.profileImg} />
+                      <View style={{ paddingLeft: 40 }}>
+                        <Text style={styles.nameText}>
+                          {item.name}
+                        </Text>
+                        <Text style={styles.listText}>From {item.city}</Text>
                       </View>
                     </View>
-                  </TouchableOpacity>}
-              />
-            </View>
-          </ScrollView>
+                    <View style={{ position: 'absolute', right: 10 }}>
+                      <AntDesign name="right" size={24} color="#dcdcdc" />
+                    </View>
+                  </View>
+                </TouchableOpacity>}
+            />
+          </View>
         </ImageBackground>
       </View>
     );
@@ -218,7 +229,12 @@ const styles = StyleSheet.create({
     height: '100%',
     flexDirection: "column",
     justifyContent: "center",
-    padding: 20
+    flex: 1
+  },
+  flatList: {
+    padding: 20,
+    marginBottom: 10,
+    width: '100%'
   },
   image: {
     flex: 1,

@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import firebase from '../database/firebase';
 import { RadioButton } from 'react-native-paper';
-import AsyncStorage from '@react-native-community/async-storage';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import ImagePicker from 'react-native-image-picker';
 
@@ -21,7 +20,7 @@ const image = require("../images/bkg.jpg");
 
 export default class Signup extends Component {
   db: firebase.firestore.Firestore;
-  date: null;
+  date: Date;
 
   constructor() {
     super();
@@ -170,14 +169,10 @@ export default class Signup extends Component {
     };
 
     ImagePicker.showImagePicker(options, async (response) => {
-      // console.log('Response = ', response);
-
       if (response.didCancel) {
         console.log('User cancelled image picker');
       } else if (response.error) {
         console.log('ImagePicker Error: ', response.error);
-      } else if (response.customButton) {
-        console.log('User tapped custom button: ', response.customButton);
       } else {
         try {
           this.setState({ isLoading: true });
@@ -200,11 +195,11 @@ export default class Signup extends Component {
             .split(":")[1]
             .split(";")[0];
 
-          let storageRef = firebase.storage().ref();
-          var imageRef = storageRef.child(`images/${this.state.mobile}.jpg`);
+          const storageRef = firebase.storage().ref();
+          const imageRef = storageRef.child(`images/${this.state.mobile}.jpg`);
           const snapshot = await imageRef.put(blob, { contentType: mimeString });
 
-          let url = await snapshot.ref.getDownloadURL();
+          const url = await snapshot.ref.getDownloadURL();
 
           console.log('Url', url);
 
@@ -215,7 +210,7 @@ export default class Signup extends Component {
         }
       }
     });
-  };
+  }
 
   render() {
     if (this.state.isLoading) {

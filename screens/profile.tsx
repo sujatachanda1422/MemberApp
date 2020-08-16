@@ -1,23 +1,38 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, TextInput, Button, ActivityIndicator } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  TextInput,
+  Button,
+  ActivityIndicator,
+  TouchableOpacity,
+  Text,
+  Alert,
+  Image
+} from 'react-native';
 import firebase from '../database/firebase';
-import AsyncStorage from '@react-native-community/async-storage';
+import RNDateTimePicker from '@react-native-community/datetimepicker';
+import ImagePicker from 'react-native-image-picker';
 
 export default class Profile extends Component {
   db: firebase.firestore.Firestore;
+  date: Date;
 
   constructor() {
     super();
+
     this.state = {
       name: '',
       mobile: '',
-      gender: 'male',
       city: '',
       dob: '',
-      pin: '',
-      isLoading: false
-    }
+      image: '',
+      isLoading: false,
+      showDatePicker: false
+    };
 
+    const dateNow = new Date();
+    this.date = new Date(dateNow.getFullYear() - 18, dateNow.getMonth(), dateNow.getDate());
     this.db = firebase.firestore();
   }
 
@@ -28,30 +43,25 @@ export default class Profile extends Component {
   }
 
   async updateUser() {
-    
-
-    // return;
-
     this.setState({
       isLoading: true
     });
 
-    this.db.collection("member_list").doc(this.state.mobile).set(this.state)
+    const userDetails = this.state;
+
+    this.db.collection("member_list").doc(userDetails.mobile).update({
+      name: userDetails.name,
+      mobile: userDetails.mobile,
+      city: userDetails.city,
+      dob: userDetails.dob,
+      image: userDetails.image
+    })
       .then(_ => {
         this.setState({
           isLoading: false
         });
 
         this.props.navigation.navigate('Home', { user: this.state });
-
-        this.setState({
-          name: '',
-          mobile: '',
-          gender: 'male',
-          city: '',
-          dob: '',
-          pin: ''
-        });
       })
       .catch(error => {
         console.log('Register error = ', error);
@@ -60,7 +70,88 @@ export default class Profile extends Component {
   }
 
   UNSAFE_componentWillMount() {
-    this.setState(this.props.route.params.user);
+    const userDetails = this.props.route.params.user;
+
+    this.setState({
+      name: userDetails.name,
+      mobile: userDetails.mobile,
+      city: userDetails.city,
+      dob: userDetails.dob,
+      image: userDetails.image
+    });
+  }
+
+  setDob(date: Date | undefined) {
+    if (!date) {
+      return;
+    }
+
+    const dateNow = new Date(this.date).getTime();
+    const selectedDate = new Date(date).getTime();
+
+    if (selectedDate < dateNow) {
+      this.setState({
+        dob: new Date(date).toLocaleDateString('en-US'),
+        showDatePicker: false
+      });
+    } else {
+      Alert.alert('', 'Age needs to be 18 years+',
+        [
+          {
+            text: 'OK',
+            onPress: () => this.setState({
+              showDatePicker: false
+            })
+          }
+        ]);
+    }
+  }
+
+  async pickImage() {
+    const options = {
+      title: 'Select Profile Picture'
+    };
+
+    ImagePicker.showImagePicker(options, async (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.error) {
+        console.log('ImagePicker Error: ', response.error);
+      } else {
+        try {
+          const blob = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+              resolve(xhr.response);
+            };
+            xhr.onerror = function () {
+              reject(new TypeError("Network request failed"));
+            };
+            xhr.responseType = "blob";
+            xhr.open("GET", response.uri, true);
+            xhr.send(null);
+          });
+
+          const mimeString = response.uri
+            .split(",")[0]
+            .split(":")[1]
+            .split(";")[0];
+
+          const storageRef = firebase.storage().ref();
+          const imageRef = storageRef.child(`images/${this.state.mobile}.jpg`);
+          const snapshot = await imageRef.put(blob, { contentType: mimeString });
+
+          const url = await snapshot.ref.getDownloadURL();
+
+          console.log('Url', url);
+
+          this.setState({ image: url });
+        }
+        catch (err) {
+          console.log("Img err ..........", err);
+        }
+      }
+    });
   }
 
   render() {
@@ -76,10 +167,8 @@ export default class Profile extends Component {
         <View style={styles.overlay}>
           <TextInput
             style={[styles.inputStyle, { backgroundColor: '#dcdcdc' }]}
-            placeholder="Mobile"
             editable={false}
             value={this.state.mobile}
-            onChangeText={(val) => this.updateInputVal(val, 'mobile')}
           />
           <TextInput
             style={styles.inputStyle}
@@ -87,18 +176,32 @@ export default class Profile extends Component {
             value={this.state.name}
             onChangeText={(val) => this.updateInputVal(val, 'name')}
           />
-          <TextInput
+          <TouchableOpacity
             style={styles.inputStyle}
-            placeholder="Date of Birth"
-            value={this.state.dob}
-            onChangeText={(val) => this.updateInputVal(val, 'dob')}
-          />
+            onPress={() => this.setState({ showDatePicker: true })}
+          >
+            <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
+          </TouchableOpacity>
+          {this.state.showDatePicker &&
+            <RNDateTimePicker
+              value={new Date(this.state.dob)}
+              onChange={(evt, date) => this.setDob(date)}
+            />
+          }
           <TextInput
-            style={styles.inputStyle}
+            style={[styles.inputStyle, { marginBottom: 0 }]}
             placeholder="City"
             value={this.state.city}
             onChangeText={(val) => this.updateInputVal(val, 'city')}
           />
+          <View style={{ marginBottom: 20 }}>
+            {this.state.image &&
+              <Image source={{ uri: this.state.image }}
+                style={{ marginVertical: 20, width: 200, height: 200 }} />
+            }
+            <Button title="Click to update the profile picture"
+              onPress={() => this.pickImage()} />
+          </View>
           <Button
             color="#3740FE"
             title="Update"
