@@ -42,7 +42,13 @@ export default class Profile extends Component {
     this.setState(state);
   }
 
-  async updateUser() {
+  updateUser() {
+    if (!this.state.name.trim() || !this.state.dob || !this.state.city
+      || !this.state.image) {
+      Alert.alert('', 'Please provide all the details');
+      return;
+    }
+
     this.setState({
       isLoading: true
     });
@@ -65,7 +71,6 @@ export default class Profile extends Component {
       })
       .catch(error => {
         console.log('Register error = ', error);
-        this.setState({ errorMessage: error.message });
       });
   }
 

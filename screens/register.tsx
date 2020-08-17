@@ -29,20 +29,19 @@ export default class Signup extends Component {
 
     this.state = {
       name: '',
-      mobile: '',
+      mobile: null,
       gender: 'male',
       city: '',
       dob: '',
       image: null,
       setDob: this.date,
-      loginPin: '',
-      otp: '',
+      loginPin: null,
+      otp: null,
       isLoading: false,
-      isRegistered: true,
+      isRegistered: false,
       isMobileVerified: null,
       isOtpSent: false,
       isLoginPinCreated: false,
-      wrongOtp: false,
       showDatePicker: false
     }
 
@@ -60,6 +59,13 @@ export default class Signup extends Component {
   }
 
   registerUser() {
+    if (!this.state.name.trim() || !this.state.dob || !this.state.city
+      || !this.state.image) {
+      Alert.alert('', 'Please provide all the details');
+      return;
+    }
+
+
     this.setState({
       isLoading: true
     });
@@ -86,10 +92,13 @@ export default class Signup extends Component {
   }
 
   sendOtp() {
-    console.log('Mobile = ', this.state.mobile);
+    if (!(/^\d{10}$/).test(this.state.mobile)) {
+      Alert.alert('', 'Please provide a valid mobile number');
+      return;
+    }
 
     this.db.collection("member_list").doc(this.state.mobile).set({
-      otp: Math.floor((Math.random() * 10000) + 1)
+      otp: Math.floor(1000 + Math.random() * 9000)
     })
       .then(_ => {
         this.setState({
@@ -102,19 +111,21 @@ export default class Signup extends Component {
   }
 
   verifyOtp() {
+    if (!(/^\d{4}$/).test(this.state.otp)) {
+      Alert.alert('', 'Please provide a valid OTP');
+      return;
+    }
+
     this.db.collection("member_list").doc(this.state.mobile).get()
       .then(doc => {
         const data = doc.data();
         if (data.otp == this.state.otp) {
           this.setState({
             isOtpSent: true,
-            wrongOtp: false,
             isLoginPinCreated: true,
           });
         } else {
-          this.setState({
-            wrongOtp: true
-          });
+          Alert.alert('Please provide the correct otp');
         }
       })
       .catch(error => {
@@ -123,16 +134,19 @@ export default class Signup extends Component {
   }
 
   verifyPin() {
+    if (!(/^\d{4}$/).test(this.state.loginPin) ||
+      !(/^\d{4}$/).test(this.state.loginPinVerify)) {
+      Alert.alert('', 'Please provide a valid pin');
+      return;
+    }
+
     if (this.state.loginPin === this.state.loginPinVerify) {
       this.setState({
         isRegistered: true,
-        isLoginPinCreated: false,
-        wrongOtp: false
+        isLoginPinCreated: false
       });
     } else {
-      this.setState({
-        wrongOtp: true
-      });
+      Alert.alert('', 'Verify pin does not match. Try again.');
     }
   }
 
@@ -229,6 +243,8 @@ export default class Signup extends Component {
                 <TextInput
                   style={styles.inputStyle}
                   placeholder="Enter Mobile"
+                  keyboardType='numeric'
+                  maxLength={10}
                   value={this.state.mobile}
                   onChangeText={(val) => this.updateInputVal(val, 'mobile')}
                 />
@@ -253,6 +269,8 @@ export default class Signup extends Component {
                 <TextInput
                   style={styles.inputStyle}
                   placeholder="Enter OTP"
+                  maxLength={4}
+                  keyboardType='numeric'
                   value={this.state.otp}
                   onChangeText={(val) => this.updateInputVal(val, 'otp')}
                 />
@@ -262,9 +280,6 @@ export default class Signup extends Component {
                   title="Verify OTP"
                   onPress={() => this.verifyOtp()}
                 />
-                {this.state.wrongOtp &&
-                  <Text>Wrong OTP please verify and try again</Text>
-                }
               </View>
             }
 
@@ -294,9 +309,6 @@ export default class Signup extends Component {
                   title="Verify Pin"
                   onPress={() => this.verifyPin()}
                 />
-                {this.state.wrongOtp &&
-                  <Text>Wrong pin please verify and try again</Text>
-                }
               </View>
             }
 
