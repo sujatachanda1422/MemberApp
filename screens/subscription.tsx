@@ -26,36 +26,6 @@ export default class Subscription extends Component {
     this.setState(state);
   }
 
-  updateUser = () => {
-    console.log('State = ', this.state);
-
-    this.setState({
-      isLoading: true
-    });
-
-    this.db.collection("member_list").doc(this.state.mobile).set(this.state)
-      .then(_ => {
-        this.setState({
-          isLoading: false
-        });
-
-        this.props.navigation.navigate('Home', { user: this.state });
-
-        this.setState({
-          name: '',
-          mobile: '',
-          gender: 'male',
-          city: '',
-          dob: '',
-          pin: ''
-        });
-      })
-      .catch(error => {
-        console.log('Register error = ', error);
-        this.setState({ errorMessage: error.message });
-      });
-  }
-
   UNSAFE_componentWillMount() {
     this.setState({
       isLoading: true
@@ -76,8 +46,6 @@ export default class Subscription extends Component {
       this.setState({
         isLoading: false
       });
-
-      console.log('Pkg = ', this.state.packages);
     })
       .catch(err => {
         this.setState({
@@ -100,24 +68,22 @@ export default class Subscription extends Component {
       name: this.props.route.params.user.name
     };
 
-    console.log('Silder ', packageDoc);
-
     this.db.collection("subscription_list")
       .doc(packageDoc.member_mobile)
       .set(packageDoc)
       .then(_ => {
-        console.log('Thank you for subscribing. Your account will be updated soon.');
-
         Alert.alert('', 'Thank you for subscribing. Your account will be updated soon.',
           [
             {
               text: 'OK',
-              onPress: () => this.props.navigation.navigate('Home', { user: this.props.route.params.user })
+              onPress: () => this.props.navigation.navigate('Home',
+                {
+                  user: this.props.route.params.user
+                })
             }
           ]);
       })
       .catch(err => console.log('Add subscription err', err));
-
   }
 
   setPackage(currentPackage: number) {

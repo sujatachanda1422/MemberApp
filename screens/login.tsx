@@ -22,7 +22,7 @@ export default class Login extends Component {
         super();
         this.state = {
             mobile: null,
-            loginPin: null,
+            loginPin: '1234',
             isLoading: false,
             hasAccount: false
         }
@@ -53,6 +53,11 @@ export default class Login extends Component {
     }
 
     userLogin = () => {
+        if (!this.state.mobile || !this.state.loginPin) {
+            Alert.alert('', 'Please provide all the details');
+            return;
+        }
+
         this.setState({
             isLoading: true,
         });
@@ -70,21 +75,23 @@ export default class Login extends Component {
                 });
 
                 if (!memberDetails) {
-                    console.error('Mobile mumber not found');
+                    Alert.alert('', 'Mobile mumber not found');
                     return;
                 }
 
-                if (this.state.loginPin === memberDetails.loginPin) {
+                if (this.state.loginPin == memberDetails.loginPin) {
                     AsyncStorage.setItem('loggedInMobile', this.state.mobile);
 
                     this.props.navigation.navigate('Home', { user: memberDetails });
                 } else {
-                    console.error('Wrong loginPin');
+                    Alert.alert('', 'Wrong login pin');
                 }
             })
             .catch(error => {
+                this.setState({
+                    isLoading: false
+                });
                 console.log('Login error = ', error);
-                this.setState({ errorMessage: error.message });
             });
     }
 

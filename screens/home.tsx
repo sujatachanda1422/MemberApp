@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   ImageBackground,
   Image,
-  ScrollView,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import firebase from '../database/firebase';
 import { AntDesign, FontAwesome5 } from '@expo/vector-icons';
@@ -17,15 +17,19 @@ import AsyncStorage from '@react-native-community/async-storage';
 const image = require("../images/bkg_home.png");
 const userImg = require("../images/user.jpg");
 let loggedInUserMobile: string | null | undefined = null;
+let subscriptionResult: firebase.firestore.DocumentData | undefined = {};
+let chatListResult: firebase.firestore.DocumentData[] = [];
 
 export default class Home extends Component {
   memberArray: Array<Object> = [];
   db: firebase.firestore.Firestore;
+  _unsubscribe: any;
 
   constructor() {
     super();
 
     this.state = {
+      isLoading: false,
       memberList: [],
       memberDetails: {}
     };
@@ -33,28 +37,22 @@ export default class Home extends Component {
     this.db = firebase.firestore();
   }
 
-  async UNSAFE_componentWillReceiveProps() {
-    await this.isLoggedIn();
-
-    if (loggedInUserMobile !== null) {
-      this.props.navigation.setOptions({
-        headerRight: () => (
-          <TouchableOpacity onPress={() => this.props.navigation.navigate('Profile',
-            { user: this.props.route.params.user }
-          )}>
-            <FontAwesome5 style={styles.addBtn} name="user-edit" size={24} color="black" />
-          </TouchableOpacity>
-        )
-      });
-
-      this.getMemberList();
-    }
+  UNSAFE_componentWillReceiveProps() {
+    this.getMemberList();
   }
 
   getMemberList() {
+    this.setState({
+      isLoading: true
+    });
+
     this.db
       .collection("member_list")
       .get().then((querySnapshot) => {
+        this.setState({
+          isLoading: false
+        });
+
         let docData;
 
         // Reset data
@@ -71,6 +69,12 @@ export default class Home extends Component {
         });
 
         this.setState({ memberList: [...this.memberArray] });
+      })
+      .catch(error => {
+        this.setState({
+          isLoading: false
+        });
+        console.log('List error = ', error);
       });
   }
 
@@ -85,10 +89,49 @@ export default class Home extends Component {
 
     if (loggedInUserMobile !== null) {
       this.props.navigation.navigate('Login', { mobile: loggedInUserMobile });
-      return;
     }
 
-    this.getMemberList();
+    this._unsubscribe = this.props.navigation.addListener('focus', async () => {
+      await this.isLoggedIn();
+
+      if (loggedInUserMobile !== null) {
+        this.props.navigation.setOptions({
+          headerRight: () => (
+            <TouchableOpacity onPress={() => this.props.navigation.navigate('Profile',
+              { user: this.props.route.params.user }
+            )}>
+              <FontAwesome5 style={styles.editProfileBtn} name="user-edit" size={24} color="black" />
+            </TouchableOpacity>
+          )
+        });
+
+        this.checkChatList();
+        this.checkForSubscription();
+      }
+    });
+  }
+
+  componentWillUnmount() {
+    this._unsubscribe();
+  }
+
+  checkChatList() {
+    this.db.collection("chat_list")
+      .doc(loggedInUserMobile)
+      .collection('members')
+      .get()
+      .then((querySnapshot) => {
+        let docData: firebase.firestore.DocumentData[] = [];
+
+        querySnapshot.forEach(doc => {
+          return docData.push(doc.data().mobile);
+        });
+
+        chatListResult = docData;
+      })
+      .catch(error => {
+        console.log('Error = ', error);
+      });
   }
 
   onMemberClick(item: { mobile: firebase.firestore.DocumentData; }) {
@@ -98,34 +141,7 @@ export default class Home extends Component {
       return;
     }
 
-    this.db.collection("chat_list")
-      .doc(loggedInUserMobile)
-      .collection('members')
-      .get()
-      .then((querySnapshot) => {
-        const chatMemberLength = querySnapshot.size;
-        let docData: firebase.firestore.DocumentData[] = [];
-
-        querySnapshot.forEach(doc => {
-          return docData.push(doc.data().mobile);
-        });
-
-        // console.log('Data = ', docData, loggedInUserMobile, item);
-
-        // Free 1 member chat
-        if (!docData.length || docData.indexOf(item.mobile) > -1) {
-          this.props.navigation.navigate('Chat',
-            {
-              from: this.props.route.params.user,
-              user: item
-            });
-        } else {
-          this.checkForSubscription(item);
-        }
-      })
-      .catch(error => {
-        console.log('Error = ', error);
-      });
+    this.verifyOnMemberClick(item);
   }
 
   showSubscriptionError(msg: string) {
@@ -133,10 +149,11 @@ export default class Home extends Component {
       [
         {
           text: 'OK',
-          onPress: () => this.props.navigation.navigate('Subscription',
-            {
-              user: this.props.route.params.user
-            })
+          onPress: () =>
+            this.props.navigation.navigate('Subscription',
+              {
+                user: this.props.route.params.user
+              })
         },
         {
           text: 'Cancel'
@@ -144,47 +161,70 @@ export default class Home extends Component {
       ]);
   }
 
-  checkForSubscription(clickedMember: { mobile: firebase.firestore.DocumentData; }) {
+  checkForSubscription() {
     this.db.collection("subscription_list")
       .doc(loggedInUserMobile)
       .get()
       .then((doc) => {
-        const docData: firebase.firestore.DocumentData = doc.data();
-        // console.log('Docdata = ', docData);
+        subscriptionResult = doc.data();
 
-        if (docData) {
-          if (docData.status === 'accepted') {
-            const today = new Date().getTime();
-            const expiryDate = new Date(docData.expiry_date).getTime();
-
-            if (today > expiryDate) {
-              this.showSubscriptionError('Your subscription has been expired, please re-subscribe again.');
-            } else if (!docData.remaining_chat) {
-              this.showSubscriptionError('Your chat limit has exhausted, please re-subscribe again.');
-            } else if (docData.remaining_chat) {
-              this.props.navigation.navigate('Chat',
-                {
-                  from: this.props.route.params.user,
-                  user: clickedMember,
-                  isSubscribed: true
-                });
-            }
-          } else if (docData.status === 'pending') {
-            Alert.alert('', 'Your subscription request is under pending state and you will be notified once its approved. Thank you!');
-          }
-        } else {
-          this.props.navigation.navigate('Subscription',
-            {
-              user: this.props.route.params.user
-            });
-        }
+        console.log('Docdata = ', subscriptionResult);
       })
       .catch(error => {
         console.log('Error = ', error);
       });
   }
 
+  verifyOnMemberClick(clickedMember: { mobile: firebase.firestore.DocumentData; }) {
+    // Free 1 member chat
+    if (!chatListResult.length) {
+      this.props.navigation.navigate('Chat',
+        {
+          from: this.props.route.params.user,
+          user: clickedMember,
+          isSubscribed: false
+        });
+
+      return;
+    }
+
+    if (subscriptionResult) {
+      if (subscriptionResult.status === 'accepted') {
+        const today = new Date().getTime();
+        const expiryDate = new Date(subscriptionResult.expiry_date).getTime();
+
+        if (today > expiryDate) {
+          this.showSubscriptionError('Your subscription has been expired, please re-subscribe again.');
+        } else if (!subscriptionResult.remaining_chat) {
+          this.showSubscriptionError('Your chat limit has exhausted, please re-subscribe again.');
+        } else if (subscriptionResult.remaining_chat) {
+          this.props.navigation.navigate('Chat',
+            {
+              from: this.props.route.params.user,
+              user: clickedMember,
+              isSubscribed: true
+            });
+        }
+      } else if (subscriptionResult.status === 'pending') {
+        Alert.alert('', 'Your subscription request is under pending state and you will be notified once its approved. Thank you!');
+      }
+    } else {
+      this.props.navigation.navigateq('Subscription',
+        {
+          user: this.props.route.params.user
+        });
+    }
+  }
+
   render() {
+    if (this.state.isLoading) {
+      return (
+        <View style={styles.preloader}>
+          <ActivityIndicator size="large" color="#9E9E9E" />
+        </View>
+      )
+    }
+
     return (
       <View style={styles.container}>
         <ImageBackground source={image} style={styles.image}>
@@ -278,10 +318,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold'
   },
-  addBtn: {
+  editProfileBtn: {
     color: '#ffff',
     marginRight: 10,
     paddingHorizontal: 8,
     paddingVertical: 5
+  },
+  preloader: {
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff'
   }
 });

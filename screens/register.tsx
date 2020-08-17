@@ -65,7 +65,6 @@ export default class Signup extends Component {
       return;
     }
 
-
     this.setState({
       isLoading: true
     });
@@ -87,6 +86,9 @@ export default class Signup extends Component {
         });
       })
       .catch(error => {
+        this.setState({
+          isLoading: false
+        });
         console.log('Register error = ', error);
       });
   }

@@ -70,6 +70,9 @@ export default class Profile extends Component {
         this.props.navigation.navigate('Home', { user: this.state });
       })
       .catch(error => {
+        this.setState({
+          isLoading: false
+        });
         console.log('Register error = ', error);
       });
   }
