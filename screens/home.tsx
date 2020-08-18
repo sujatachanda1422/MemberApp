@@ -23,7 +23,7 @@ let chatListResult: firebase.firestore.DocumentData[] = [];
 export default class Home extends Component {
   memberArray: Array<Object> = [];
   db: firebase.firestore.Firestore;
-  _unsubscribe: any;
+  _unsubscribe: any = () => { };
 
   constructor() {
     super();
@@ -89,6 +89,8 @@ export default class Home extends Component {
 
     if (loggedInUserMobile !== null) {
       this.props.navigation.navigate('Login', { mobile: loggedInUserMobile });
+    } else {
+      this.getMemberList();
     }
 
     this._unsubscribe = this.props.navigation.addListener('focus', async () => {
@@ -189,10 +191,10 @@ export default class Home extends Component {
     }
 
     if (subscriptionResult) {
-      if (subscriptionResult.status === 'accepted') {
-        const today = new Date().getTime();
-        const expiryDate = new Date(subscriptionResult.expiry_date).getTime();
+      const today = new Date().getTime();
+      const expiryDate = new Date(subscriptionResult.expiry_date).getTime();
 
+      if (subscriptionResult.status === 'accepted') {
         if (today > expiryDate) {
           this.showSubscriptionError('Your subscription has been expired, please re-subscribe again.');
         } else if (!subscriptionResult.remaining_chat) {
@@ -206,7 +208,18 @@ export default class Home extends Component {
             });
         }
       } else if (subscriptionResult.status === 'pending') {
-        Alert.alert('', 'Your subscription request is under pending state and you will be notified once its approved. Thank you!');
+        // If subscription is not expired then user can chat with old contacted members
+        if (expiryDate && (today <= expiryDate)
+          && chatListResult.indexOf(clickedMember.mobile) > -1) {
+          this.props.navigation.navigate('Chat',
+            {
+              from: this.props.route.params.user,
+              user: clickedMember,
+              isSubscribed: true
+            });
+        } else {
+          Alert.alert('', 'Your subscription request is under pending state and you will be notified once its approved. Thank you!');
+        }
       }
     } else {
       this.props.navigation.navigateq('Subscription',
@@ -214,6 +227,10 @@ export default class Home extends Component {
           user: this.props.route.params.user
         });
     }
+  }
+
+  getAge(dob: string | number | Date) {
+    return Math.floor((new Date() - new Date(dob).getTime()) / 3.15576e+10);
   }
 
   render() {
@@ -230,7 +247,7 @@ export default class Home extends Component {
         <ImageBackground source={image} style={styles.image}>
           <View style={styles.overlay}>
             <FlatList
-              style={styles.flatList}
+            contentContainerStyle={styles.listContainer}
               data={this.state.memberList}
               keyExtractor={(index) => index.mobile}
               renderItem={({ item }) =>
@@ -243,10 +260,22 @@ export default class Home extends Component {
                         <Text style={styles.nameText}>
                           {item.name}
                         </Text>
-                        <Text style={styles.listText}>From {item.city}</Text>
+                        <View style={styles.listDesc}>
+                          <Text style={{ textTransform: 'capitalize' }}>
+                            {item.city}
+                          </Text>
+                          {(item.dob != null && item.dob !== '') &&
+                            <View style={{ flexDirection: 'row' }}>
+                              <Text>,</Text>
+                              <Text style={{paddingHorizontal: 5}}>
+                                {this.getAge(item.dob)}
+                              </Text>
+                            </View>
+                          }
+                        </View>
                       </View>
                     </View>
-                    <View style={{ position: 'absolute', right: 10 }}>
+                    <View style={{ position: 'absolute', right: 5 }}>
                       <AntDesign name="right" size={24} color="#dcdcdc" />
                     </View>
                   </View>
@@ -271,10 +300,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flex: 1
   },
-  flatList: {
-    padding: 20,
-    marginBottom: 10,
-    width: '100%'
+  listContainer: {
+    width: '100%',
+    paddingTop: 20,
+    paddingLeft: 15,
+    paddingRight: 10
   },
   image: {
     flex: 1,
@@ -291,7 +321,7 @@ const styles = StyleSheet.create({
   item: {
     paddingHorizontal: 10,
     borderColor: '#868181',
-    marginBottom: 20,
+    marginBottom: 15
   },
   listItemWrapper: {
     display: 'flex',
@@ -307,9 +337,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center'
   },
-  listText: {
-    textTransform: 'capitalize',
-    lineHeight: 30
+  listDesc: {
+    flexDirection: 'row',
+    paddingVertical: 5
   },
   nameText: {
     textTransform: 'capitalize',

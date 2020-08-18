@@ -68,6 +68,41 @@ export default class Subscription extends Component {
       name: this.props.route.params.user.name
     };
 
+    const subscriptionDoc = this.db.collection("subscription_list")
+      .doc(packageDoc.member_mobile);
+
+    subscriptionDoc.get()
+      .then(doc => {
+        const docData = doc.data();
+
+        console.log('Doc = ', docData);
+
+        if (docData) {
+          subscriptionDoc.update({
+            status: 'pending',
+            package_name: packageDetails.name,
+            request_date_time: new Date().toLocaleDateString("en-US"),
+            remaining_chat: docData.remaining_chat + packageDetails.chatNumber
+          });
+        } else {
+          subscriptionDoc.set(packageDoc);
+        }
+
+        Alert.alert('', 'Thank you for subscribing. Your account will be updated soon.',
+          [
+            {
+              text: 'OK',
+              onPress: () => this.props.navigation.navigate('Home',
+                {
+                  user: this.props.route.params.user
+                })
+            }
+          ]);
+      })
+      .catch(err => console.log('Subscription update error = ', err));
+
+    return;
+
     this.db.collection("subscription_list")
       .doc(packageDoc.member_mobile)
       .set(packageDoc)

@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import {
     StyleSheet,
-    Text,
     View,
     TextInput,
     Button,
@@ -113,8 +112,7 @@ export default class Login extends Component {
                             alignItems: 'center',
                             marginTop: 20
                         }}>
-                            {/* <Image source={logo} style={{ marginTop: 10, width: 100, height: 100 }}></Image> */}
-                            <Text style={{ fontSize: 20 }}>ChunMun</Text>
+                            <Image source={logo} style={{ marginTop: 10, width: 200, height: 200 }}></Image>
                         </View>
                         {!this.state.hasAccount &&
                             <TextInput
@@ -134,7 +132,7 @@ export default class Login extends Component {
                             secureTextEntry={true}
                         />
                         <Button
-                            color="#3740FE"
+                            color="#2dadb3"
                             title="Sign In"
                             onPress={() => this.userLogin()}
                         />
