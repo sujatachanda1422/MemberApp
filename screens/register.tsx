@@ -9,7 +9,8 @@ import {
   ImageBackground,
   TouchableOpacity,
   Alert,
-  Image
+  Image,
+  ScrollView
 } from 'react-native';
 import firebase from '../database/firebase';
 import { RadioButton } from 'react-native-paper';
@@ -30,7 +31,7 @@ export default class Signup extends Component {
     this.state = {
       name: '',
       mobile: null,
-      gender: 'male',
+      gender: 'female',
       city: '',
       dob: '',
       image: null,
@@ -79,7 +80,14 @@ export default class Signup extends Component {
       image: this.state.image
     })
       .then(_ => {
-        this.props.navigation.navigate('Login', { mobile: this.state.mobile });
+        this.props.navigation.navigate('HomeComp',
+          {
+            screen: 'Login',
+            params: {
+              mobile: this.state.mobile
+            }
+          }
+        )
 
         this.setState({
           isLoading: false
@@ -239,132 +247,138 @@ export default class Signup extends Component {
     return (
       <View style={styles.container}>
         <ImageBackground source={image} style={styles.image}>
-          <View style={styles.overlay}>
-            {(!this.state.isRegistered && !this.state.isOtpSent) &&
-              <View>
-                <TextInput
-                  style={styles.inputStyle}
-                  placeholder="Enter Mobile"
-                  keyboardType='numeric'
-                  maxLength={10}
-                  value={this.state.mobile}
-                  onChangeText={(val) => this.updateInputVal(val, 'mobile')}
-                />
-
-                <Button
-                  color="#3740FE"
-                  title="Send OTP"
-                  onPress={() => this.sendOtp()}
-                />
-
-                <Text
-                  style={styles.loginText}
-                  onPress={() => this.props.navigation.navigate('Login')}>
-                  Already have an account?
-                 </Text>
-              </View>
-            }
-
-            {(!this.state.isRegistered && this.state.isOtpSent
-              && !this.state.isLoginPinCreated) &&
-              <View>
-                <TextInput
-                  style={styles.inputStyle}
-                  placeholder="Enter OTP"
-                  maxLength={4}
-                  keyboardType='numeric'
-                  value={this.state.otp}
-                  onChangeText={(val) => this.updateInputVal(val, 'otp')}
-                />
-
-                <Button
-                  color="#3740FE"
-                  title="Verify OTP"
-                  onPress={() => this.verifyOtp()}
-                />
-              </View>
-            }
-
-            {(!this.state.isRegistered && this.state.isLoginPinCreated) &&
-              <View>
-                <TextInput
-                  style={styles.inputStyle}
-                  placeholder="Create login pin (4 digits)"
-                  keyboardType='numeric'
-                  value={this.state.loginPin}
-                  secureTextEntry={true}
-                  maxLength={4}
-                  onChangeText={(val) => this.updateInputVal(val, 'loginPin')}
-                />
-                <TextInput
-                  style={styles.inputStyle}
-                  placeholder="Re-enter login pin"
-                  keyboardType='numeric'
-                  value={this.state.loginPinVerify}
-                  secureTextEntry={true}
-                  maxLength={4}
-                  onChangeText={(val) => this.updateInputVal(val, 'loginPinVerify')}
-                />
-
-                <Button
-                  color="#3740FE"
-                  title="Verify Pin"
-                  onPress={() => this.verifyPin()}
-                />
-              </View>
-            }
-
-            {this.state.isRegistered &&
-              <View>
-                <TextInput
-                  style={styles.inputStyle}
-                  placeholder="Full Name"
-                  value={this.state.name}
-                  onChangeText={(val) => this.updateInputVal(val, 'name')}
-                />
-                <RadioButton.Group onValueChange={value => this.updateInputVal(value, 'gender')}
-                  value={this.state.gender}>
-                  <View style={styles.radio}>
-                    <Text style={styles.radioText}>Gender: </Text>
-                    <RadioButton.Item label="Male" value="male" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
-                    <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
-                  </View>
-                </RadioButton.Group>
-                <TouchableOpacity
-                  style={styles.inputStyle}
-                  onPress={() => this.setState({ showDatePicker: true })}
-                >
-                  <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
-                </TouchableOpacity>
-                {this.state.showDatePicker &&
-                  <RNDateTimePicker
-                    value={this.state.setDob}
-                    onChange={(evt, date) => this.setDob(date)}
+          <ScrollView>
+            <View style={styles.overlay}>
+              {(!this.state.isRegistered && !this.state.isOtpSent) &&
+                <View>
+                  <TextInput
+                    style={styles.inputStyle}
+                    placeholder="Enter Mobile"
+                    keyboardType='numeric'
+                    maxLength={10}
+                    value={this.state.mobile}
+                    onChangeText={(val) => this.updateInputVal(val, 'mobile')}
                   />
-                }
-                <TextInput
-                  style={styles.inputStyle}
-                  placeholder="City"
-                  value={this.state.city}
-                  onChangeText={(val) => this.updateInputVal(val, 'city')}
-                />
 
-                <View style={{ marginBottom: 20 }}>
-                  <Button title="Pick an image from camera roll" onPress={() => this.pickImage()} />
-                  {this.state.image &&
-                    <Image source={{ uri: this.state.image }}
-                      style={{ marginTop: 20, width: 200, height: 200 }} />
-                  }
+                  <Button
+                    color="#3740FE"
+                    title="Send OTP"
+                    onPress={() => this.sendOtp()}
+                  />
+
+                  <Text
+                    style={styles.loginText}
+                    onPress={() => this.props.navigation.navigate('HomeComp',
+                      {
+                        screen: 'Login'
+                      }
+                    )}>
+                    Already have an account?
+                 </Text>
                 </View>
+              }
 
-                <Button
-                  color="#3740FE"
-                  title="Sign Up"
-                  onPress={() => this.registerUser()}
-                />
-              </View>
-            }
-          </View>
+              {(!this.state.isRegistered && this.state.isOtpSent
+                && !this.state.isLoginPinCreated) &&
+                <View>
+                  <TextInput
+                    style={styles.inputStyle}
+                    placeholder="Enter OTP"
+                    maxLength={4}
+                    keyboardType='numeric'
+                    value={this.state.otp}
+                    onChangeText={(val) => this.updateInputVal(val, 'otp')}
+                  />
+
+                  <Button
+                    color="#3740FE"
+                    title="Verify OTP"
+                    onPress={() => this.verifyOtp()}
+                  />
+                </View>
+              }
+
+              {(!this.state.isRegistered && this.state.isLoginPinCreated) &&
+                <View>
+                  <TextInput
+                    style={styles.inputStyle}
+                    placeholder="Create login pin (4 digits)"
+                    keyboardType='numeric'
+                    value={this.state.loginPin}
+                    secureTextEntry={true}
+                    maxLength={4}
+                    onChangeText={(val) => this.updateInputVal(val, 'loginPin')}
+                  />
+                  <TextInput
+                    style={styles.inputStyle}
+                    placeholder="Re-enter login pin"
+                    keyboardType='numeric'
+                    value={this.state.loginPinVerify}
+                    secureTextEntry={true}
+                    maxLength={4}
+                    onChangeText={(val) => this.updateInputVal(val, 'loginPinVerify')}
+                  />
+
+                  <Button
+                    color="#3740FE"
+                    title="Verify Pin"
+                    onPress={() => this.verifyPin()}
+                  />
+                </View>
+              }
+
+              {this.state.isRegistered &&
+                <View>
+                  <TextInput
+                    style={styles.inputStyle}
+                    placeholder="Full Name"
+                    value={this.state.name}
+                    onChangeText={(val) => this.updateInputVal(val, 'name')}
+                  />
+                  <RadioButton.Group onValueChange={value => this.updateInputVal(value, 'gender')}
+                    value={this.state.gender}>
+                    <View style={styles.radio}>
+                      <Text style={styles.radioText}>Gender: </Text>
+                      <RadioButton.Item label="Male" value="male" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+                      <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+                    </View>
+                  </RadioButton.Group>
+                  <TouchableOpacity
+                    style={styles.inputStyle}
+                    onPress={() => this.setState({ showDatePicker: true })}
+                  >
+                    <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
+                  </TouchableOpacity>
+                  {this.state.showDatePicker &&
+                    <RNDateTimePicker
+                      value={this.state.setDob}
+                      onChange={(evt, date) => this.setDob(date)}
+                    />
+                  }
+                  <TextInput
+                    style={styles.inputStyle}
+                    placeholder="City"
+                    value={this.state.city}
+                    onChangeText={(val) => this.updateInputVal(val, 'city')}
+                  />
+
+                  <View style={{ marginBottom: 20 }}>
+                    <Button title="Pick an image from camera roll" onPress={() => this.pickImage()} />
+                    {this.state.image &&
+                      <Image source={{ uri: this.state.image }}
+                        style={{ marginTop: 20, width: 200, height: 200 }} />
+                    }
+                  </View>
+
+                  <Button
+                    color="#3740FE"
+                    title="Sign Up"
+                    onPress={() => this.registerUser()}
+                  />
+                </View>
+              }
+            </View>
+          </ScrollView>
         </ImageBackground>
       </View>
     );

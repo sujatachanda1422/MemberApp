@@ -88,7 +88,13 @@ export default class Home extends Component {
     await this.isLoggedIn();
 
     if (loggedInUserMobile !== null) {
-      this.props.navigation.navigate('Login', { mobile: loggedInUserMobile });
+      this.props.navigation.navigate('HomeComp',
+        {
+          screen: 'Login',
+          params: {
+            mobile: loggedInUserMobile
+          }
+        });
     } else {
       this.getMemberList();
     }
@@ -97,15 +103,21 @@ export default class Home extends Component {
       await this.isLoggedIn();
 
       if (loggedInUserMobile !== null) {
-        this.props.navigation.setOptions({
-          headerRight: () => (
-            <TouchableOpacity onPress={() => this.props.navigation.navigate('Profile',
-              { user: this.props.route.params.user }
-            )}>
-              <FontAwesome5 style={styles.editProfileBtn} name="user-edit" size={24} color="black" />
-            </TouchableOpacity>
-          )
-        });
+        // this.props.navigation.setOptions({
+        //   headerRight: () => (
+        //     <TouchableOpacity onPress={() =>
+        //       this.props.navigation.navigate('HomeComp',
+        //         {
+        //           screen: 'Profile',
+        //           params: {
+        //             user: this.props.route.params.user
+        //           }
+        //         }
+        //       )}>
+        //       <FontAwesome5 style={styles.editProfileBtn} name="user-edit" size={24} color="black" />
+        //     </TouchableOpacity>
+        //   )
+        // });
 
         this.checkChatList();
         this.checkForSubscription();
@@ -139,7 +151,14 @@ export default class Home extends Component {
   onMemberClick(item: { mobile: firebase.firestore.DocumentData; }) {
     // For not registered user
     if (!loggedInUserMobile) {
-      this.props.navigation.navigate('Register', { verified: false });
+      this.props.navigation.navigate('HomeComp',
+        {
+          screen: 'Register',
+          params: {
+            verified: false
+          }
+        }
+      )
       return;
     }
 
@@ -152,10 +171,14 @@ export default class Home extends Component {
         {
           text: 'OK',
           onPress: () =>
-            this.props.navigation.navigate('Subscription',
+            this.props.navigation.navigate('HomeComp',
               {
-                user: this.props.route.params.user
-              })
+                screen: 'Subscription',
+                params: {
+                  user: this.props.route.params.user
+                }
+              }
+            )
         },
         {
           text: 'Cancel'
@@ -180,13 +203,16 @@ export default class Home extends Component {
   verifyOnMemberClick(clickedMember: { mobile: firebase.firestore.DocumentData; }) {
     // Free 1 member chat
     if (!chatListResult.length) {
-      this.props.navigation.navigate('Chat',
+      this.props.navigation.navigate('HomeComp',
         {
-          from: this.props.route.params.user,
-          user: clickedMember,
-          isSubscribed: false
-        });
-
+          screen: 'Chat',
+          params: {
+            from: this.props.route.params.user,
+            user: clickedMember,
+            isSubscribed: false
+          }
+        }
+      )
       return;
     }
 
@@ -200,32 +226,44 @@ export default class Home extends Component {
         } else if (!subscriptionResult.remaining_chat) {
           this.showSubscriptionError('Your chat limit has exhausted, please re-subscribe again.');
         } else if (subscriptionResult.remaining_chat) {
-          this.props.navigation.navigate('Chat',
+          this.props.navigation.navigate('HomeComp',
             {
-              from: this.props.route.params.user,
-              user: clickedMember,
-              isSubscribed: true
-            });
+              screen: 'Chat',
+              params: {
+                from: this.props.route.params.user,
+                user: clickedMember,
+                isSubscribed: true
+              }
+            }
+          )
         }
       } else if (subscriptionResult.status === 'pending') {
         // If subscription is not expired then user can chat with old contacted members
         if (expiryDate && (today <= expiryDate)
           && chatListResult.indexOf(clickedMember.mobile) > -1) {
-          this.props.navigation.navigate('Chat',
+          this.props.navigation.navigate('HomeComp',
             {
-              from: this.props.route.params.user,
-              user: clickedMember,
-              isSubscribed: true
-            });
+              screen: 'Chat',
+              params: {
+                from: this.props.route.params.user,
+                user: clickedMember,
+                isSubscribed: true
+              }
+            }
+          )
         } else {
           Alert.alert('', 'Your subscription request is under pending state and you will be notified once its approved. Thank you!');
         }
       }
     } else {
-      this.props.navigation.navigateq('Subscription',
+      this.props.navigation.navigate('HomeComp',
         {
-          user: this.props.route.params.user
-        });
+          screen: 'Subscription',
+          params: {
+            user: this.props.route.params.user
+          }
+        }
+      )
     }
   }
 
@@ -247,7 +285,7 @@ export default class Home extends Component {
         <ImageBackground source={image} style={styles.image}>
           <View style={styles.overlay}>
             <FlatList
-            contentContainerStyle={styles.listContainer}
+              contentContainerStyle={styles.listContainer}
               data={this.state.memberList}
               keyExtractor={(index) => index.mobile}
               renderItem={({ item }) =>
@@ -267,7 +305,7 @@ export default class Home extends Component {
                           {(item.dob != null && item.dob !== '') &&
                             <View style={{ flexDirection: 'row' }}>
                               <Text>,</Text>
-                              <Text style={{paddingHorizontal: 5}}>
+                              <Text style={{ paddingHorizontal: 5 }}>
                                 {this.getAge(item.dob)}
                               </Text>
                             </View>

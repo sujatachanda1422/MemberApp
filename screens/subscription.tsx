@@ -92,33 +92,19 @@ export default class Subscription extends Component {
           [
             {
               text: 'OK',
-              onPress: () => this.props.navigation.navigate('Home',
-                {
-                  user: this.props.route.params.user
-                })
+              onPress: () =>
+                this.props.navigation.navigate('HomeComp',
+                  {
+                    screen: 'Home',
+                    params: {
+                      user: this.props.route.params.user
+                    }
+                  }
+                )
             }
           ]);
       })
       .catch(err => console.log('Subscription update error = ', err));
-
-    return;
-
-    this.db.collection("subscription_list")
-      .doc(packageDoc.member_mobile)
-      .set(packageDoc)
-      .then(_ => {
-        Alert.alert('', 'Thank you for subscribing. Your account will be updated soon.',
-          [
-            {
-              text: 'OK',
-              onPress: () => this.props.navigation.navigate('Home',
-                {
-                  user: this.props.route.params.user
-                })
-            }
-          ]);
-      })
-      .catch(err => console.log('Add subscription err', err));
   }
 
   setPackage(currentPackage: number) {

@@ -13,6 +13,9 @@ import {
 import firebase from '../database/firebase';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import ImagePicker from 'react-native-image-picker';
+import AsyncStorage from '@react-native-community/async-storage';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { Picker } from '@react-native-community/picker';
 
 export default class Profile extends Component {
   db: firebase.firestore.Firestore;
@@ -22,11 +25,11 @@ export default class Profile extends Component {
     super();
 
     this.state = {
-      name: '',
-      mobile: '',
-      city: '',
-      dob: '',
-      image: '',
+      name: null,
+      mobile: null,
+      city: null,
+      dob: null,
+      image: null,
       isLoading: false,
       showDatePicker: false
     };
@@ -53,21 +56,26 @@ export default class Profile extends Component {
       isLoading: true
     });
 
-    const userDetails = this.state;
+    const { isLoading, showDatePicker, ...userDetails } = this.state;
 
-    this.db.collection("member_list").doc(userDetails.mobile).update({
-      name: userDetails.name,
-      mobile: userDetails.mobile,
-      city: userDetails.city,
-      dob: userDetails.dob,
-      image: userDetails.image
-    })
+    this.db.collection("member_list")
+      .doc(userDetails.mobile)
+      .update(userDetails)
       .then(_ => {
         this.setState({
           isLoading: false
         });
 
-        this.props.navigation.navigate('Home', { user: this.state });
+        AsyncStorage.setItem('loggedInUser', JSON.stringify(userDetails));
+
+        this.props.navigation.navigate('HomeComp',
+          {
+            screen: 'Home',
+            params: {
+              user: this.state
+            }
+          }
+        );
       })
       .catch(error => {
         this.setState({
@@ -77,16 +85,25 @@ export default class Profile extends Component {
       });
   }
 
-  UNSAFE_componentWillMount() {
-    const userDetails = this.props.route.params.user;
-
+  async UNSAFE_componentWillMount() {
     this.setState({
-      name: userDetails.name,
-      mobile: userDetails.mobile,
-      city: userDetails.city,
-      dob: userDetails.dob,
-      image: userDetails.image
+      isLoading: true
     });
+
+    let userDetails = await AsyncStorage.getItem('loggedInUser');
+
+    if (userDetails) {
+      userDetails = JSON.parse(userDetails);
+
+      this.setState({
+        name: userDetails.name,
+        mobile: userDetails.mobile,
+        city: userDetails.city,
+        dob: userDetails.dob,
+        image: userDetails.image,
+        isLoading: false
+      });
+    }
   }
 
   setDob(date: Date | undefined) {
@@ -171,52 +188,54 @@ export default class Profile extends Component {
       )
     }
     return (
-      <View style={styles.container}>
-        <View style={styles.overlay}>
-          <TextInput
-            style={[styles.inputStyle, { backgroundColor: '#dcdcdc' }]}
-            editable={false}
-            value={this.state.mobile}
-          />
-          <TextInput
-            style={styles.inputStyle}
-            placeholder="Full Name"
-            value={this.state.name}
-            onChangeText={(val) => this.updateInputVal(val, 'name')}
-          />
-          <TouchableOpacity
-            style={styles.inputStyle}
-            onPress={() => this.setState({ showDatePicker: true })}
-          >
-            <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
-          </TouchableOpacity>
-          {this.state.showDatePicker &&
-            <RNDateTimePicker
-              value={new Date(this.state.dob)}
-              onChange={(evt, date) => this.setDob(date)}
+      <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1 }} >
+        <View style={styles.container}>
+          <View style={styles.overlay}>
+            <TextInput
+              style={[styles.inputStyle, { backgroundColor: '#dcdcdc' }]}
+              editable={false}
+              value={this.state.mobile}
             />
-          }
-          <TextInput
-            style={[styles.inputStyle, { marginBottom: 0 }]}
-            placeholder="City"
-            value={this.state.city}
-            onChangeText={(val) => this.updateInputVal(val, 'city')}
-          />
-          <View style={{ marginBottom: 20 }}>
-            {this.state.image &&
-              <Image source={{ uri: this.state.image }}
-                style={{ marginVertical: 20, width: 200, height: 200 }} />
+            <TextInput
+              style={styles.inputStyle}
+              placeholder="Full Name"
+              value={this.state.name}
+              onChangeText={(val) => this.updateInputVal(val, 'name')}
+            />
+            <TouchableOpacity
+              style={styles.inputStyle}
+              onPress={() => this.setState({ showDatePicker: true })}
+            >
+              <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
+            </TouchableOpacity>
+            {this.state.showDatePicker &&
+              <RNDateTimePicker
+                value={new Date(this.state.dob)}
+                onChange={(evt, date) => this.setDob(date)}
+              />
             }
-            <Button title="Click to update the profile picture"
-              onPress={() => this.pickImage()} />
+            <TextInput
+              style={[styles.inputStyle, { marginBottom: 0 }]}
+              placeholder="City"
+              value={this.state.city}
+              onChangeText={(val) => this.updateInputVal(val, 'city')}
+            />
+            <View style={{ marginBottom: 20 }}>
+              {this.state.image &&
+                <Image source={{ uri: this.state.image }}
+                  style={{ marginVertical: 20, width: 200, height: 200 }} />
+              }
+              <Button title="Click to update the profile picture"
+                onPress={() => this.pickImage()} />
+            </View>
+            <Button
+              color="#3740FE"
+              title="Update"
+              onPress={() => this.updateUser()}
+            />
           </View>
-          <Button
-            color="#3740FE"
-            title="Update"
-            onPress={() => this.updateUser()}
-          />
         </View>
-      </View>
+      </KeyboardAwareScrollView>
     );
   }
 }

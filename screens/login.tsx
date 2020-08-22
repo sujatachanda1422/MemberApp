@@ -80,8 +80,16 @@ export default class Login extends Component {
 
                 if (this.state.loginPin == memberDetails.loginPin) {
                     AsyncStorage.setItem('loggedInMobile', this.state.mobile);
+                    AsyncStorage.setItem('loggedInUser', JSON.stringify(memberDetails));
 
-                    this.props.navigation.navigate('Home', { user: memberDetails });
+                    this.props.navigation.navigate('HomeComp',
+                        {
+                            screen: 'Home',
+                            params: {
+                                user: memberDetails
+                            }
+                        }
+                    )
                 } else {
                     Alert.alert('', 'Wrong login pin');
                 }
