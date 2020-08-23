@@ -7,7 +7,8 @@ import {
     ActivityIndicator,
     ImageBackground,
     Image,
-    Alert
+    Alert,
+    Text
 } from 'react-native';
 import firebase from '../database/firebase';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -21,26 +22,36 @@ export default class Login extends Component {
         super();
         this.state = {
             mobile: null,
-            loginPin: '1234',
+            loginPin: null,
             isLoading: false,
             hasAccount: false
         }
     }
 
     componentDidMount() {
-        if (this.props.route.params) {
+        if (this.props.route.params && this.props.route.params.mobile) {
             this.setState({
                 hasAccount: true,
                 mobile: this.props.route.params.mobile
+            });
+        } else {
+            this.setState({
+                hasAccount: false,
+                mobile: null
             });
         }
     }
 
     UNSAFE_componentWillReceiveProps() {
-        if (this.props.route.params) {
+        if (this.props.route.params && this.props.route.params.mobile) {
             this.setState({
                 hasAccount: true,
                 mobile: this.props.route.params.mobile
+            });
+        } else {
+            this.setState({
+                hasAccount: false,
+                mobile: null
             });
         }
     }
@@ -144,12 +155,16 @@ export default class Login extends Component {
                             title="Sign In"
                             onPress={() => this.userLogin()}
                         />
-                        {/* 
+
                         <Text
                             style={styles.loginText}
-                            onPress={() => this.props.navigation.navigate('Register')}>
+                            onPress={() => this.props.navigation.navigate('HomeComp',
+                                {
+                                    screen: 'Register'
+                                }
+                            )}>
                             Don't have account? Click here to signup
-                      </Text> */}
+                      </Text>
                     </View>
                 </ImageBackground>
             </View>

@@ -16,6 +16,10 @@ import ImagePicker from 'react-native-image-picker';
 import AsyncStorage from '@react-native-community/async-storage';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Picker } from '@react-native-community/picker';
+import { MaterialIcons } from '@expo/vector-icons';
+
+let cityList: firebase.firestore.DocumentData[] = [];
+const userImg = require("../images/user.jpg");
 
 export default class Profile extends Component {
   db: firebase.firestore.Firestore;
@@ -27,7 +31,7 @@ export default class Profile extends Component {
     this.state = {
       name: null,
       mobile: null,
-      city: null,
+      city: 'Kolkata',
       dob: null,
       image: null,
       isLoading: false,
@@ -46,8 +50,7 @@ export default class Profile extends Component {
   }
 
   updateUser() {
-    if (!this.state.name.trim() || !this.state.dob || !this.state.city
-      || !this.state.image) {
+    if (!this.state.name.trim() || !this.state.dob) {
       Alert.alert('', 'Please provide all the details');
       return;
     }
@@ -91,6 +94,7 @@ export default class Profile extends Component {
     });
 
     let userDetails = await AsyncStorage.getItem('loggedInUser');
+    await this.getCityList();
 
     if (userDetails) {
       userDetails = JSON.parse(userDetails);
@@ -179,6 +183,16 @@ export default class Profile extends Component {
     });
   }
 
+  async getCityList() {
+    cityList = [];
+
+    await this.db.collection("city_list").get().then(function (querySnapshot) {
+      querySnapshot.forEach(function (doc) {
+        cityList.push(doc.data());
+      });
+    });
+  }
+
   render() {
     if (this.state.isLoading) {
       return (
@@ -190,50 +204,53 @@ export default class Profile extends Component {
     return (
       <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1 }} >
         <View style={styles.container}>
-          <View style={styles.overlay}>
-            <TextInput
-              style={[styles.inputStyle, { backgroundColor: '#dcdcdc' }]}
-              editable={false}
-              value={this.state.mobile}
-            />
-            <TextInput
-              style={styles.inputStyle}
-              placeholder="Full Name"
-              value={this.state.name}
-              onChangeText={(val) => this.updateInputVal(val, 'name')}
-            />
-            <TouchableOpacity
-              style={styles.inputStyle}
-              onPress={() => this.setState({ showDatePicker: true })}
-            >
-              <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
-            </TouchableOpacity>
-            {this.state.showDatePicker &&
-              <RNDateTimePicker
-                value={new Date(this.state.dob)}
-                onChange={(evt, date) => this.setDob(date)}
+          <View style={styles.imgOverlay}>
+            <TouchableOpacity style={{ width: 200, position: 'relative' }}
+              onPress={() => this.pickImage()} >
+              <Image source={this.state.image ?
+                { uri: this.state.image } : userImg}
+                style={styles.profileImg} />
+              <MaterialIcons name="add-a-photo" size={36} color="white" style={styles.icon}
               />
-            }
-            <TextInput
-              style={[styles.inputStyle, { marginBottom: 0 }]}
-              placeholder="City"
-              value={this.state.city}
-              onChangeText={(val) => this.updateInputVal(val, 'city')}
-            />
-            <View style={{ marginBottom: 20 }}>
-              {this.state.image &&
-                <Image source={{ uri: this.state.image }}
-                  style={{ marginVertical: 20, width: 200, height: 200 }} />
-              }
-              <Button title="Click to update the profile picture"
-                onPress={() => this.pickImage()} />
-            </View>
-            <Button
-              color="#3740FE"
-              title="Update"
-              onPress={() => this.updateUser()}
-            />
+            </TouchableOpacity>
           </View>
+          <TextInput
+            style={[styles.inputStyle, { backgroundColor: '#dcdcdc' }]}
+            editable={false}
+            value={this.state.mobile}
+          />
+          <TextInput
+            style={styles.inputStyle}
+            placeholder="Full Name"
+            value={this.state.name}
+            onChangeText={(val) => this.updateInputVal(val, 'name')}
+          />
+          <TouchableOpacity
+            style={styles.inputStyle}
+            onPress={() => this.setState({ showDatePicker: true })}
+          >
+            <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
+          </TouchableOpacity>
+          {this.state.showDatePicker &&
+            <RNDateTimePicker
+              value={new Date(this.state.dob)}
+              onChange={(evt, date) => this.setDob(date)}
+            />
+          }
+          <Picker
+            selectedValue={this.state.city}
+            style={styles.dropDown}
+            onValueChange={(itemValue) => this.setState({ city: itemValue })}>
+            {cityList.map(item => {
+              return <Picker.Item key={item.name} label={item.name} value={item.name} />
+            })}
+          </Picker>
+
+          <Button
+            color="#3740FE"
+            title="Update"
+            onPress={() => this.updateUser()}
+          />
         </View>
       </KeyboardAwareScrollView>
     );
@@ -244,20 +261,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    backgroundColor: '#aac8dc'
+    backgroundColor: '#aac8dc',
+    padding: 20
   },
-  overlay: {
-    backgroundColor: 'rgba(199,199,199,0.3)',
-    height: '100%',
-    flexDirection: "column",
-    justifyContent: "center",
-    padding: 20,
+  imgOverlay: {
+    alignItems: 'center',
+    marginVertical: 30
+  },
+  profileImg: {
+    width: 200,
+    height: 200,
+    borderRadius: 200
+  },
+  icon: {
+    position: 'absolute',
+    right: 20,
+    top: 10
   },
   image: {
     flex: 1,
     justifyContent: "center"
+  },
+  dropDown: {
+    height: 50,
+    width: '100%',
+    marginBottom: 20,
+    backgroundColor: '#fff'
   },
   inputStyle: {
     width: '100%',

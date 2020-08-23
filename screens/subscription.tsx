@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Alert, ImageBackground } from 'react-native';
 import firebase from '../database/firebase';
 import CardSilder from './slider';
 
+const image = require("../images/sub1.jpg");
 // Not assigning it in state since setPackage fn gets called multiple times
 let packageSelected: number = 0;
 
@@ -129,31 +130,33 @@ export default class Subscription extends Component {
     }
     return (
       <View style={styles.container}>
-        <CardSilder style={{ marginTop: 30 }} onPackageChange={this.setPackage}>
-          {this.state.packages.map(((item) => (
-            <View key={item.name} style={[styles.package, this.getPackageColor(item)]}
-            >
-              <Text style={[styles.packageText, { textTransform: 'capitalize' }]}>
-                {item.name}
-              </Text>
-              <Text style={styles.packageText}>
-                Chat count: {item.chatNumber}
-              </Text>
-              <Text style={styles.packageText}>
-                Rs. {item.price}
-              </Text>
-              <Text style={styles.packageText}>
-                Valid: {item.validity} Months
+        <ImageBackground source={image} style={styles.image}>
+          <CardSilder style={{ marginTop: 60 }} onPackageChange={this.setPackage}>
+            {this.state.packages.map(((item) => (
+              <View>
+                <Text style={styles.packagaeName}> {item.name}</Text>
+                <View key={item.name}
+                  style={[styles.package, this.getPackageColor(item)]}>
+                  <Text style={styles.packageText}>
+                    Chat count: {item.chatNumber}
+                  </Text>
+                  <Text style={styles.packageText}>
+                    Rs. {item.price}
+                  </Text>
+                  <Text style={styles.packageText}>
+                    Valid: {item.validity} Months
             </Text>
-            </View>
-          )))}
-        </CardSilder>
+                </View>
+              </View>
+            )))}
+          </CardSilder>
 
-        <TouchableOpacity
-          onPress={() => this.setSubscription()}
-          style={styles.button}>
-          <Text style={styles.buttonText}>Subscribe</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => this.setSubscription()}
+            style={styles.button}>
+            <Text style={styles.buttonText}>Subscribe</Text>
+          </TouchableOpacity>
+        </ImageBackground>
       </View>
     );
   }
@@ -165,13 +168,33 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
+  },
+  image: {
+    flex: 1,
+    justifyContent: "center",
   },
   package: {
-    height: 400,
+
+    height: 350,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#dcdcdc'
+  },
+  packagaeName: {
+    color: '#fff',
+    fontSize: 36,
+    backgroundColor: '#2756ab',
+    width: 140,
+    height: 140,
+    borderRadius: 140,
+    alignSelf: 'center',
+    marginBottom: -70,
+    position: 'relative',
+    zIndex: 1,
+    textAlignVertical: 'center',
+    textAlign: 'center',
+    paddingRight: 5
   },
   packageText: {
     color: '#000',
@@ -189,7 +212,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'silver'
   },
   button: {
-    margin: 20,
+    marginHorizontal: 20,
+    marginBottom: 60,
     padding: 20,
     alignContent: 'center',
     backgroundColor: "#3740FE",

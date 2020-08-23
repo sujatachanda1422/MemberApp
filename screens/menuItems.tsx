@@ -8,33 +8,47 @@ import {
 import AsyncStorage from '@react-native-community/async-storage';
 import { FontAwesome, AntDesign, FontAwesome5 } from '@expo/vector-icons';
 
-let loggedInUser: boolean = false;
+let loggedInUser: string | null = null;
 
 export default class MenuItems extends Component {
 
     constructor() {
         super();
         this.state = {
-            loggedInUser: true
+            loggedInUser: false
         }
     }
 
     async UNSAFE_componentWillReceiveProps() {
-        if (!loggedInUser) {
-            const loggedInUserMobile = await AsyncStorage.getItem('loggedInMobile');
-            loggedInUser = !!loggedInUserMobile;
-
-            this.setState({ loggedInUser });
-        }
-
-        console.log('Props 1', loggedInUser);
+        loggedInUser = await AsyncStorage.getItem('loggedInMobile');
+        this.setState({ loggedInUser });
     }
 
-    onMenuSelect(item: string) {
+    async onMenuSelect(item: string) {
         switch (item) {
             case 'pin':
+                this.props.navigation.navigate('HomeComp',
+                    {
+                        screen: 'ChangePin',
+                        params: {
+                            mobile: loggedInUser
+                        }
+                    }
+                )
                 break;
             case 'subscription':
+                let user = await AsyncStorage.getItem('loggedInUser');
+                user = JSON.parse(user);
+
+                this.props.navigation.navigate('HomeComp',
+                    {
+                        screen: 'MySubscription',
+                        params: {
+                            user
+                        }
+                    }
+                )
+
                 break;
             case 'profile':
                 this.props.navigation.navigate('HomeComp',
@@ -44,10 +58,31 @@ export default class MenuItems extends Component {
                 )
                 break;
             case 'logout':
+                AsyncStorage.removeItem('loggedInUser');
+                AsyncStorage.removeItem('loggedInMobile');
+
+                this.props.navigation.navigate('HomeComp',
+                    {
+                        screen: 'Login'
+                    }
+                )
                 break;
             case 'login':
+                this.props.navigation.navigate('HomeComp',
+                    {
+                        screen: 'Login',
+                        params: {
+                            mobile: loggedInUser
+                        }
+                    }
+                )
                 break;
             case 'register':
+                this.props.navigation.navigate('HomeComp',
+                    {
+                        screen: 'Register'
+                    }
+                )
                 break;
         }
 

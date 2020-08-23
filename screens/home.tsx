@@ -103,22 +103,6 @@ export default class Home extends Component {
       await this.isLoggedIn();
 
       if (loggedInUserMobile !== null) {
-        // this.props.navigation.setOptions({
-        //   headerRight: () => (
-        //     <TouchableOpacity onPress={() =>
-        //       this.props.navigation.navigate('HomeComp',
-        //         {
-        //           screen: 'Profile',
-        //           params: {
-        //             user: this.props.route.params.user
-        //           }
-        //         }
-        //       )}>
-        //       <FontAwesome5 style={styles.editProfileBtn} name="user-edit" size={24} color="black" />
-        //     </TouchableOpacity>
-        //   )
-        // });
-
         this.checkChatList();
         this.checkForSubscription();
       }
@@ -226,6 +210,7 @@ export default class Home extends Component {
         } else if (!subscriptionResult.remaining_chat) {
           this.showSubscriptionError('Your chat limit has exhausted, please re-subscribe again.');
         } else if (subscriptionResult.remaining_chat) {
+          console.log("User = ", this.props.route.params);
           this.props.navigation.navigate('HomeComp',
             {
               screen: 'Chat',
@@ -293,20 +278,21 @@ export default class Home extends Component {
                   onPress={() => this.onMemberClick(item)} >
                   <View style={styles.listItemWrapper}>
                     <View style={styles.listItem}>
-                      <Image source={(item.image && item.image !== '') ? { uri: item.image } : userImg} style={styles.profileImg} />
+                      <Image source={(item.image && item.image !== '') ?
+                        { uri: item.image } : userImg} style={styles.profileImg} />
                       <View style={{ paddingLeft: 40 }}>
                         <Text style={styles.nameText}>
                           {item.name}
                         </Text>
                         <View style={styles.listDesc}>
-                          <Text style={{ textTransform: 'capitalize' }}>
-                            {item.city}
+                          <Text style={{ textTransform: 'capitalize', color: '#000' }}>
+                            City: {item.city}
                           </Text>
                           {(item.dob != null && item.dob !== '') &&
                             <View style={{ flexDirection: 'row' }}>
                               <Text>,</Text>
-                              <Text style={{ paddingHorizontal: 5 }}>
-                                {this.getAge(item.dob)}
+                              <Text style={{ paddingHorizontal: 5, color: '#000' }}>
+                                Age: {this.getAge(item.dob)}
                               </Text>
                             </View>
                           }
@@ -384,7 +370,8 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     color: 'green',
     fontSize: 18,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    fontFamily: 'serif'
   },
   editProfileBtn: {
     color: '#ffff',

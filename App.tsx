@@ -7,32 +7,17 @@ import Home from './screens/home';
 import Chat from './screens/chat';
 import MenuItems from './screens/menuItems';
 import Profile from './screens/profile';
+import ChangePin from './screens/changePin';
 import Subscription from './screens/subscription';
+import MySubscription from './screens/mySubscription';
 import {
-  createDrawerNavigator,
-  DrawerContentScrollView,
-  DrawerItem,
+  createDrawerNavigator
 } from '@react-navigation/drawer';
 import { TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
-
-function CustomDrawerContent(props) {
-  return (
-    <DrawerContentScrollView {...props}>
-      <DrawerItem
-        label="Close drawer"
-        onPress={() => props.navigation.closeDrawer()}
-      />
-      <DrawerItem
-        label="Toggle drawer"
-        onPress={() => props.navigation.toggleDrawer()}
-      />
-    </DrawerContentScrollView>
-  );
-}
 
 function HomeComp() {
   return (
@@ -81,6 +66,20 @@ function HomeComp() {
         component={Profile}
       />
       <Stack.Screen
+        name="ChangePin"
+        options={{
+          title: 'Change Pin'
+        }}
+        component={ChangePin}
+      />
+      <Stack.Screen
+        name="MySubscription"
+        options={{
+          title: "My Subscription"
+        }}
+        component={MySubscription}
+      />
+      <Stack.Screen
         name="Subscription"
         options={{
           title: "Select a package"
@@ -113,7 +112,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Drawer.Navigator
-        drawerContent={props => <MenuItems {...props}/>}
+        drawerContent={props => <MenuItems {...props} />}
         initialRouteName="HomeComp"
       >
         <Drawer.Screen name="HomeComp"

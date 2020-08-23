@@ -10,14 +10,16 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-  ScrollView
 } from 'react-native';
 import firebase from '../database/firebase';
 import { RadioButton } from 'react-native-paper';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import ImagePicker from 'react-native-image-picker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { Picker } from '@react-native-community/picker';
 
 const image = require("../images/bkg.jpg");
+let cityList: firebase.firestore.DocumentData[] = [];
 
 export default class Signup extends Component {
   db: firebase.firestore.Firestore;
@@ -32,7 +34,7 @@ export default class Signup extends Component {
       name: '',
       mobile: null,
       gender: 'female',
-      city: '',
+      city: 'Kolkata',
       dob: '',
       image: null,
       setDob: this.date,
@@ -44,7 +46,7 @@ export default class Signup extends Component {
       isOtpSent: false,
       isLoginPinCreated: false,
       showDatePicker: false
-    }
+    };
 
     this.db = firebase.firestore();
   }
@@ -55,13 +57,23 @@ export default class Signup extends Component {
     this.setState(state);
   }
 
-  UNSAFE_componentWillMount() {
+  async UNSAFE_componentWillMount() {
+    await this.getCityList();
     this.setState({ isRegistered: this.props.route.params.verified });
   }
 
+  async getCityList() {
+    cityList = [];
+
+    await this.db.collection("city_list").get().then(function (querySnapshot) {
+      querySnapshot.forEach(function (doc) {
+        cityList.push(doc.data());
+      });
+    });
+  }
+
   registerUser() {
-    if (!this.state.name.trim() || !this.state.dob || !this.state.city
-      || !this.state.image) {
+    if (!this.state.name.trim() || !this.state.dob) {
       Alert.alert('', 'Please provide all the details');
       return;
     }
@@ -101,9 +113,27 @@ export default class Signup extends Component {
       });
   }
 
-  sendOtp() {
+  checkDuplicateMobile() {
+    return this.db.collection("member_list")
+      .doc(this.state.mobile).get().then(doc => {
+        if (doc.exists && doc.data().mobile) {
+          return doc.exists;
+        }
+
+        return false;
+      });
+  }
+
+  async sendOtp() {
     if (!(/^\d{10}$/).test(this.state.mobile)) {
       Alert.alert('', 'Please provide a valid mobile number');
+      return;
+    }
+
+    const isDuplicate = await this.checkDuplicateMobile();
+
+    if (isDuplicate) {
+      Alert.alert('', 'Mobile number already exists, please use another');
       return;
     }
 
@@ -245,9 +275,9 @@ export default class Signup extends Component {
       )
     }
     return (
-      <View style={styles.container}>
-        <ImageBackground source={image} style={styles.image}>
-          <ScrollView>
+      <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1 }} >
+        <View style={styles.container}>
+          <ImageBackground source={image} style={styles.image}>
             <View style={styles.overlay}>
               {(!this.state.isRegistered && !this.state.isOtpSent) &&
                 <View>
@@ -355,12 +385,14 @@ export default class Signup extends Component {
                       onChange={(evt, date) => this.setDob(date)}
                     />
                   }
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="City"
-                    value={this.state.city}
-                    onChangeText={(val) => this.updateInputVal(val, 'city')}
-                  />
+                  <Picker
+                    selectedValue={this.state.city}
+                    style={styles.dropDown}
+                    onValueChange={(itemValue) => this.setState({ city: itemValue })}>
+                    {cityList.map(item => {
+                      return <Picker.Item key={item.name} label={item.name} value={item.name} />
+                    })}
+                  </Picker>
 
                   <View style={{ marginBottom: 20 }}>
                     <Button title="Pick an image from camera roll" onPress={() => this.pickImage()} />
@@ -378,9 +410,9 @@ export default class Signup extends Component {
                 </View>
               }
             </View>
-          </ScrollView>
-        </ImageBackground>
-      </View>
+          </ImageBackground>
+        </View>
+      </KeyboardAwareScrollView>
     );
   }
 }
@@ -410,6 +442,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     backgroundColor: '#fff',
     borderRadius: 2
+  },
+  dropDown: {
+    height: 50,
+    width: '100%',
+    marginBottom: 20,
+    backgroundColor: '#fff'
   },
   preloader: {
     left: 0,
