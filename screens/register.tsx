@@ -17,6 +17,7 @@ import RNDateTimePicker from '@react-native-community/datetimepicker';
 import ImagePicker from 'react-native-image-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Picker } from '@react-native-community/picker';
+import CryptoJS from "react-native-crypto-js";
 
 const image = require("../images/bkg.jpg");
 let cityList: firebase.firestore.DocumentData[] = [];
@@ -82,11 +83,14 @@ export default class Signup extends Component {
       isLoading: true
     });
 
+    // Encrypt
+    const encryptedPwd = CryptoJS.AES.encrypt(this.state.loginPin, 'chunchun').toString();
+
     this.db.collection("member_list").doc(this.state.mobile).set({
       mobile: this.state.mobile,
       city: this.state.city,
       name: this.state.name,
-      loginPin: this.state.loginPin,
+      loginPin: encryptedPwd,
       dob: this.state.dob,
       gender: this.state.gender,
       image: this.state.image

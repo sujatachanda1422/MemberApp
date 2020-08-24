@@ -138,7 +138,11 @@ export default class Profile extends Component {
 
   async pickImage() {
     const options = {
-      title: 'Select Profile Picture'
+      title: 'Select Profile Picture',
+      noData: true,
+      maxWidth: 300,
+      maxHeight: 300,
+      quality: 0.01
     };
 
     ImagePicker.showImagePicker(options, async (response) => {

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import firebase from '../database/firebase';
 import AsyncStorage from '@react-native-community/async-storage';
+import CryptoJS from "react-native-crypto-js";
 
 const image = require("../images/login.jpg");
 const logo = require("../images/chat1.jpg");
@@ -89,7 +90,12 @@ export default class Login extends Component {
                     return;
                 }
 
-                if (this.state.loginPin == memberDetails.loginPin) {
+                // Decrypt
+                let bytes = CryptoJS.AES.decrypt(memberDetails.loginPin, 'chunchun');
+                let decryptPassword = bytes.toString(CryptoJS.enc.Utf8);
+                console.log('Text = ', decryptPassword);
+
+                if (this.state.loginPin == decryptPassword) {
                     AsyncStorage.setItem('loggedInMobile', this.state.mobile);
                     AsyncStorage.setItem('loggedInUser', JSON.stringify(memberDetails));
 
@@ -137,6 +143,7 @@ export default class Login extends Component {
                             <TextInput
                                 style={styles.inputStyle}
                                 placeholder="Mobile"
+                                keyboardType='numeric'
                                 value={this.state.mobile}
                                 onChangeText={(val) => this.updateInputVal(val, 'mobile')}
                                 maxLength={10}
@@ -145,6 +152,7 @@ export default class Login extends Component {
                         <TextInput
                             style={styles.inputStyle}
                             placeholder="Pin"
+                            keyboardType='numeric'
                             value={this.state.loginPin}
                             onChangeText={(val) => this.updateInputVal(val, 'loginPin')}
                             maxLength={4}

@@ -132,8 +132,8 @@ export default class Subscription extends Component {
       <View style={styles.container}>
         <ImageBackground source={image} style={styles.image}>
           <CardSilder style={{ marginTop: 60 }} onPackageChange={this.setPackage}>
-            {this.state.packages.map(((item) => (
-              <View>
+            {this.state.packages.map(((item, index) => (
+              <View key={index}>
                 <Text style={styles.packagaeName}> {item.name}</Text>
                 <View key={item.name}
                   style={[styles.package, this.getPackageColor(item)]}>

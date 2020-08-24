@@ -196,8 +196,11 @@ export default class Chat extends Component {
       <View style={{ display: "flex", flexDirection: 'column', height: '100%' }}>
         <FlatList
           contentContainerStyle={{ paddingVertical: 10 }}
-          style={{ paddingHorizontal: 10}}
+          style={{ paddingHorizontal: 10 }}
           data={this.state.messageList}
+          ref={ref => this.flatList = ref}
+          onContentSizeChange={() => this.flatList.scrollToEnd({ animated: true })}
+          onLayout={() => this.flatList.scrollToEnd({ animated: true })}
           renderItem={this.renderRow}
           keyExtractor={(item, index) => index.toString()}
         />
