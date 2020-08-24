@@ -18,8 +18,12 @@ import ImagePicker from 'react-native-image-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Picker } from '@react-native-community/picker';
 import CryptoJS from "react-native-crypto-js";
+import { MaterialIcons } from '@expo/vector-icons';
 
-const image = require("../images/bkg.jpg");
+const image = require("../images/sub.jpg");
+const appIcon = require("../images/appIcon.png");
+const userImg = require("../images/user.jpg");
+
 let cityList: firebase.firestore.DocumentData[] = [];
 
 export default class Signup extends Component {
@@ -42,11 +46,12 @@ export default class Signup extends Component {
       loginPin: null,
       otp: null,
       isLoading: false,
-      isRegistered: false,
-      isMobileVerified: null,
-      isOtpSent: false,
-      isLoginPinCreated: false,
-      showDatePicker: false
+      doMobileVerify: true,
+      doOTPVerify: false,
+      doPinVerify: false,
+      showDatePicker: false,
+      doImageVerify: false,
+      picUpload: false
     };
 
     this.db = firebase.firestore();
@@ -58,9 +63,8 @@ export default class Signup extends Component {
     this.setState(state);
   }
 
-  async UNSAFE_componentWillMount() {
-    await this.getCityList();
-    this.setState({ isRegistered: this.props.route.params.verified });
+  UNSAFE_componentWillMount() {
+    this.getCityList();
   }
 
   async getCityList() {
@@ -73,12 +77,19 @@ export default class Signup extends Component {
     });
   }
 
-  registerUser() {
+  setForm() {
     if (!this.state.name.trim() || !this.state.dob) {
       Alert.alert('', 'Please provide all the details');
       return;
     }
 
+    this.setState({
+      doImageVerify: true,
+      doFormVerify: false
+    });
+  }
+
+  registerUser() {
     this.setState({
       isLoading: true
     });
@@ -146,7 +157,8 @@ export default class Signup extends Component {
     })
       .then(_ => {
         this.setState({
-          isOtpSent: true
+          doOTPVerify: true,
+          doMobileVerify: false
         });
       })
       .catch(error => {
@@ -165,8 +177,8 @@ export default class Signup extends Component {
         const data = doc.data();
         if (data.otp == this.state.otp) {
           this.setState({
-            isOtpSent: true,
-            isLoginPinCreated: true,
+            doOTPVerify: false,
+            doPinVerify: true
           });
         } else {
           Alert.alert('Please provide the correct otp');
@@ -186,8 +198,8 @@ export default class Signup extends Component {
 
     if (this.state.loginPin === this.state.loginPinVerify) {
       this.setState({
-        isRegistered: true,
-        isLoginPinCreated: false
+        doFormVerify: true,
+        doPinVerify: false
       });
     } else {
       Alert.alert('', 'Verify pin does not match. Try again.');
@@ -223,7 +235,12 @@ export default class Signup extends Component {
 
   async pickImage() {
     const options = {
-      title: 'Select Profile Picture'
+      title: 'Select Profile Picture',
+      noData: true,
+      maxWidth: 500,
+      maxHeight: 500,
+      quality: 1,
+      storageOptions: { privateDirectory: true }
     };
 
     ImagePicker.showImagePicker(options, async (response) => {
@@ -233,7 +250,7 @@ export default class Signup extends Component {
         console.log('ImagePicker Error: ', response.error);
       } else {
         try {
-          this.setState({ isLoading: true });
+          this.setState({ picUpload: true });
 
           const blob = await new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
@@ -261,7 +278,7 @@ export default class Signup extends Component {
 
           console.log('Url', url);
 
-          this.setState({ image: url, isLoading: false });
+          this.setState({ image: url, picUpload: false });
         }
         catch (err) {
           console.log("Img err ..........", err);
@@ -279,144 +296,165 @@ export default class Signup extends Component {
       )
     }
     return (
-      <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1 }} >
-        <View style={styles.container}>
-          <ImageBackground source={image} style={styles.image}>
-            <View style={styles.overlay}>
-              {(!this.state.isRegistered && !this.state.isOtpSent) &&
-                <View>
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="Enter Mobile"
-                    keyboardType='numeric'
-                    maxLength={10}
-                    value={this.state.mobile}
-                    onChangeText={(val) => this.updateInputVal(val, 'mobile')}
-                  />
-
-                  <Button
-                    color="#3740FE"
-                    title="Send OTP"
-                    onPress={() => this.sendOtp()}
-                  />
-
-                  <Text
-                    style={styles.loginText}
-                    onPress={() => this.props.navigation.navigate('HomeComp',
-                      {
-                        screen: 'Login'
-                      }
-                    )}>
-                    Already have an account?
-                 </Text>
-                </View>
-              }
-
-              {(!this.state.isRegistered && this.state.isOtpSent
-                && !this.state.isLoginPinCreated) &&
-                <View>
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="Enter OTP"
-                    maxLength={4}
-                    keyboardType='numeric'
-                    value={this.state.otp}
-                    onChangeText={(val) => this.updateInputVal(val, 'otp')}
-                  />
-
-                  <Button
-                    color="#3740FE"
-                    title="Verify OTP"
-                    onPress={() => this.verifyOtp()}
-                  />
-                </View>
-              }
-
-              {(!this.state.isRegistered && this.state.isLoginPinCreated) &&
-                <View>
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="Create login pin (4 digits)"
-                    keyboardType='numeric'
-                    value={this.state.loginPin}
-                    secureTextEntry={true}
-                    maxLength={4}
-                    onChangeText={(val) => this.updateInputVal(val, 'loginPin')}
-                  />
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="Re-enter login pin"
-                    keyboardType='numeric'
-                    value={this.state.loginPinVerify}
-                    secureTextEntry={true}
-                    maxLength={4}
-                    onChangeText={(val) => this.updateInputVal(val, 'loginPinVerify')}
-                  />
-
-                  <Button
-                    color="#3740FE"
-                    title="Verify Pin"
-                    onPress={() => this.verifyPin()}
-                  />
-                </View>
-              }
-
-              {this.state.isRegistered &&
-                <View>
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="Full Name"
-                    value={this.state.name}
-                    onChangeText={(val) => this.updateInputVal(val, 'name')}
-                  />
-                  <RadioButton.Group onValueChange={value => this.updateInputVal(value, 'gender')}
-                    value={this.state.gender}>
-                    <View style={styles.radio}>
-                      <Text style={styles.radioText}>Gender: </Text>
-                      <RadioButton.Item label="Male" value="male" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
-                      <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
-                    </View>
-                  </RadioButton.Group>
-                  <TouchableOpacity
-                    style={styles.inputStyle}
-                    onPress={() => this.setState({ showDatePicker: true })}
-                  >
-                    <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
-                  </TouchableOpacity>
-                  {this.state.showDatePicker &&
-                    <RNDateTimePicker
-                      value={this.state.setDob}
-                      onChange={(evt, date) => this.setDob(date)}
+      <View style={styles.container}>
+        <ImageBackground source={image} style={styles.image}>
+          <View style={styles.imageWrapper}>
+            <View style={{ marginTop: 20 }}>
+              <Image source={appIcon} style={styles.appIcon} />
+            </View>
+            <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1 }} >
+              <View style={styles.overlay}>
+                {this.state.doMobileVerify &&
+                  <View>
+                    <TextInput
+                      style={styles.inputStyle}
+                      placeholder="Enter your Mobile number"
+                      keyboardType='numeric'
+                      maxLength={10}
+                      value={this.state.mobile}
+                      onChangeText={(val) => this.updateInputVal(val, 'mobile')}
                     />
-                  }
-                  <Picker
-                    selectedValue={this.state.city}
-                    style={styles.dropDown}
-                    onValueChange={(itemValue) => this.setState({ city: itemValue })}>
-                    {cityList.map(item => {
-                      return <Picker.Item key={item.name} label={item.name} value={item.name} />
-                    })}
-                  </Picker>
 
-                  <View style={{ marginBottom: 20 }}>
-                    <Button title="Pick an image from camera roll" onPress={() => this.pickImage()} />
-                    {this.state.image &&
-                      <Image source={{ uri: this.state.image }}
-                        style={{ marginTop: 20, width: 200, height: 200 }} />
+                    <Button
+                      color="#3740FE"
+                      title="Verify Mobile"
+                      onPress={() => this.sendOtp()}
+                    />
+
+                    <Text
+                      style={styles.loginText}
+                      onPress={() => this.props.navigation.navigate('HomeComp',
+                        {
+                          screen: 'Login'
+                        }
+                      )}>
+                      Already have an account? Login now
+                 </Text>
+                  </View>
+                }
+
+                {this.state.doOTPVerify &&
+                  <View>
+                    <TextInput
+                      style={styles.inputStyle}
+                      placeholder="Enter OTP"
+                      maxLength={4}
+                      keyboardType='numeric'
+                      value={this.state.otp}
+                      onChangeText={(val) => this.updateInputVal(val, 'otp')}
+                    />
+
+                    <Button
+                      color="#3740FE"
+                      title="Verify OTP"
+                      onPress={() => this.verifyOtp()}
+                    />
+                  </View>
+                }
+
+                {this.state.doPinVerify &&
+                  <View>
+                    <TextInput
+                      style={styles.inputStyle}
+                      placeholder="Create login pin (4 digits)"
+                      keyboardType='numeric'
+                      value={this.state.loginPin}
+                      secureTextEntry={true}
+                      maxLength={4}
+                      onChangeText={(val) => this.updateInputVal(val, 'loginPin')}
+                    />
+                    <TextInput
+                      style={styles.inputStyle}
+                      placeholder="Re-enter login pin"
+                      keyboardType='numeric'
+                      value={this.state.loginPinVerify}
+                      secureTextEntry={true}
+                      maxLength={4}
+                      onChangeText={(val) => this.updateInputVal(val, 'loginPinVerify')}
+                    />
+
+                    <Button
+                      color="#3740FE"
+                      title="Verify Pin"
+                      onPress={() => this.verifyPin()}
+                    />
+                  </View>
+                }
+
+                {this.state.doFormVerify &&
+                  <View>
+                    <TextInput
+                      style={styles.inputStyle}
+                      placeholder="Full Name"
+                      value={this.state.name}
+                      onChangeText={(val) => this.updateInputVal(val, 'name')}
+                    />
+                    <RadioButton.Group onValueChange={value => this.updateInputVal(value, 'gender')}
+                      value={this.state.gender}>
+                      <View style={styles.radio}>
+                        <Text style={styles.radioText}>Gender: </Text>
+                        <RadioButton.Item label="Male" value="male" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+                        <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+                      </View>
+                    </RadioButton.Group>
+                    <TouchableOpacity
+                      style={styles.inputStyle}
+                      onPress={() => this.setState({ showDatePicker: true })}
+                    >
+                      <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
+                    </TouchableOpacity>
+                    {this.state.showDatePicker &&
+                      <RNDateTimePicker
+                        value={this.state.setDob}
+                        onChange={(evt, date) => this.setDob(date)}
+                      />
                     }
+                    <Picker
+                      selectedValue={this.state.city}
+                      style={styles.dropDown}
+                      onValueChange={(itemValue) => this.setState({ city: itemValue })}>
+                      {cityList.map(item => {
+                        return <Picker.Item key={item.name} label={item.name} value={item.name} />
+                      })}
+                    </Picker>
+
+                    <Button
+                      color="#3740FE"
+                      title="Verify Details"
+                      onPress={() => this.setForm()}
+                    />
+                  </View>
+                }
+
+                {this.state.doImageVerify &&
+                  <View>
+                    <TouchableOpacity style={{ width: 200, position: 'relative', alignSelf: 'center', marginBottom: 100 }}
+                      onPress={() => this.pickImage()} >
+                      {this.state.picUpload === true &&
+                        <View style={styles.picLoader}>
+                          <ActivityIndicator size="large" color="#dcdcdc" />
+                        </View>
+                      }
+                      <Image source={this.state.image ?
+                        { uri: this.state.image } : userImg}
+                        style={styles.profileImg} />
+                      <MaterialIcons name="add-a-photo" size={36} color="black" style={styles.icon}
+                      />
+                    </TouchableOpacity>
+
+                    <Button
+                      color="#3740FE"
+                      title="Sign Up"
+                      onPress={() => this.registerUser()}
+                    />
                   </View>
 
-                  <Button
-                    color="#3740FE"
-                    title="Sign Up"
-                    onPress={() => this.registerUser()}
-                  />
-                </View>
-              }
-            </View>
-          </ImageBackground>
-        </View>
-      </KeyboardAwareScrollView>
+                }
+              </View>
+            </KeyboardAwareScrollView>
+          </View>
+        </ImageBackground>
+      </View>
     );
   }
 }
@@ -424,20 +462,50 @@ export default class Signup extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center"
+    display: "flex"
   },
   overlay: {
-    backgroundColor: 'rgba(199,199,199,0.4)',
     height: '100%',
-    flexDirection: "column",
     justifyContent: "center",
     padding: 20
   },
   image: {
-    flex: 1,
-    justifyContent: "center"
+    flex: 1
+  },
+  imageWrapper: {
+    backgroundColor: 'rgba(199,199,199,0.4)',
+    flexGrow: 1
+  },
+  icon: {
+    position: 'absolute',
+    right: -15,
+    top: 10
+  },
+  imgOverlay: {
+    alignItems: 'center',
+    marginVertical: 30
+  },
+  profileImg: {
+    width: 200,
+    height: 200
+  },
+  picLoader: {
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 200,
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fdfdfd85',
+    zIndex: 1
+  },
+  appIcon: {
+    borderRadius: 100,
+    width: 100,
+    height: 100,
+    alignSelf: 'center'
   },
   inputStyle: {
     width: '100%',

@@ -11,7 +11,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import firebase from '../database/firebase';
-import { AntDesign, FontAwesome5 } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
 
 const image = require("../images/bkg_home.png");

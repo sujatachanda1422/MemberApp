@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Picker } from '@react-native-community/picker';
 import { MaterialIcons } from '@expo/vector-icons';
+import { RadioButton } from 'react-native-paper';
 
 let cityList: firebase.firestore.DocumentData[] = [];
 const userImg = require("../images/user.jpg");
@@ -33,9 +34,11 @@ export default class Profile extends Component {
       mobile: null,
       city: 'Kolkata',
       dob: null,
+      gender: null,
       image: null,
       isLoading: false,
-      showDatePicker: false
+      showDatePicker: false,
+      picUpload: false
     };
 
     const dateNow = new Date();
@@ -49,17 +52,35 @@ export default class Profile extends Component {
     this.setState(state);
   }
 
-  updateUser() {
+  getConfirmation() {
     if (!this.state.name.trim() || !this.state.dob) {
       Alert.alert('', 'Please provide all the details');
       return;
     }
 
+    Alert.alert('', 'Are you sure, you want to update your profile?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => {
+            const oldImg = this.state.oldImage;
+            console.log('Img = ', oldImg);
+            this.setState({ image: oldImg })
+          }
+        },
+        {
+          text: 'OK',
+          onPress: () => this.updateUser()
+        }
+      ]);
+  }
+
+  updateUser() {
     this.setState({
       isLoading: true
     });
 
-    const { isLoading, showDatePicker, ...userDetails } = this.state;
+    const { isLoading, showDatePicker, picUpload, oldImage, ...userDetails } = this.state;
 
     this.db.collection("member_list")
       .doc(userDetails.mobile)
@@ -105,6 +126,8 @@ export default class Profile extends Component {
         city: userDetails.city,
         dob: userDetails.dob,
         image: userDetails.image,
+        oldImage: userDetails.image,
+        gender: userDetails.gender,
         isLoading: false
       });
     }
@@ -140,9 +163,10 @@ export default class Profile extends Component {
     const options = {
       title: 'Select Profile Picture',
       noData: true,
-      maxWidth: 300,
-      maxHeight: 300,
-      quality: 0.01
+      maxWidth: 500,
+      maxHeight: 500,
+      quality: 1,
+      storageOptions: { privateDirectory: true }
     };
 
     ImagePicker.showImagePicker(options, async (response) => {
@@ -151,6 +175,7 @@ export default class Profile extends Component {
       } else if (response.error) {
         console.log('ImagePicker Error: ', response.error);
       } else {
+        this.setState({ picUpload: true });
         try {
           const blob = await new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
@@ -176,9 +201,9 @@ export default class Profile extends Component {
 
           const url = await snapshot.ref.getDownloadURL();
 
-          console.log('Url', url);
+          // console.log('Url', url);
 
-          this.setState({ image: url });
+          this.setState({ image: url, picUpload: false });
         }
         catch (err) {
           console.log("Img err ..........", err);
@@ -211,6 +236,11 @@ export default class Profile extends Component {
           <View style={styles.imgOverlay}>
             <TouchableOpacity style={{ width: 200, position: 'relative' }}
               onPress={() => this.pickImage()} >
+              {this.state.picUpload === true &&
+                <View style={styles.picLoader}>
+                  <ActivityIndicator size="large" color="#dcdcdc" />
+                </View>
+              }
               <Image source={this.state.image ?
                 { uri: this.state.image } : userImg}
                 style={styles.profileImg} />
@@ -229,6 +259,15 @@ export default class Profile extends Component {
             value={this.state.name}
             onChangeText={(val) => this.updateInputVal(val, 'name')}
           />
+          <RadioButton.Group onValueChange={value => this.updateInputVal(value, 'gender')}
+            value={this.state.gender}>
+            <View style={styles.radio}>
+              <Text style={styles.radioText}>Gender: </Text>
+              <RadioButton.Item label="Male" value="male" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+              <RadioButton.Item label="Female" value="female" color='blue' style={styles.radioBtn} labelStyle={styles.radioBtnLbl} />
+            </View>
+          </RadioButton.Group>
+
           <TouchableOpacity
             style={styles.inputStyle}
             onPress={() => this.setState({ showDatePicker: true })}
@@ -253,7 +292,7 @@ export default class Profile extends Component {
           <Button
             color="#3740FE"
             title="Update"
-            onPress={() => this.updateUser()}
+            onPress={() => this.getConfirmation()}
           />
         </View>
       </KeyboardAwareScrollView>
@@ -276,6 +315,23 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 200
+  },
+  radio: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff'
+  },
+  radioText: {
+    lineHeight: 30,
+    fontSize: 14
+  },
+  radioBtn: {
+    marginRight: 20,
+  },
+  radioBtnLbl: {
+    fontSize: 14
   },
   icon: {
     position: 'absolute',
@@ -309,5 +365,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff'
+  },
+  picLoader: {
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 200,
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fdfdfd85',
+    zIndex: 1
   }
 });

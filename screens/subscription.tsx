@@ -56,6 +56,19 @@ export default class Subscription extends Component {
       })
   }
 
+  getConfirmation() {
+    Alert.alert('', 'Are you sure, you want to buy this subscription?',
+    [
+        {
+            text: 'Cancel'
+        },
+        {
+            text: 'OK',
+            onPress: () => this.setSubscription()
+        }
+    ]);
+  }
+
   setSubscription() {
     const packageDetails = this.state.packages[packageSelected];
     const packageDoc = {
@@ -75,8 +88,6 @@ export default class Subscription extends Component {
     subscriptionDoc.get()
       .then(doc => {
         const docData = doc.data();
-
-        console.log('Doc = ', docData);
 
         if (docData) {
           subscriptionDoc.update({
@@ -152,7 +163,7 @@ export default class Subscription extends Component {
           </CardSilder>
 
           <TouchableOpacity
-            onPress={() => this.setSubscription()}
+            onPress={() => this.getConfirmation()}
             style={styles.button}>
             <Text style={styles.buttonText}>Subscribe</Text>
           </TouchableOpacity>

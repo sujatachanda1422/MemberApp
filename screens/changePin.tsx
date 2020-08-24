@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import firebase from '../database/firebase';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import CryptoJS from "react-native-crypto-js";
 
 export default class ChangePin extends Component {
   db: firebase.firestore.Firestore;
@@ -44,30 +45,41 @@ export default class ChangePin extends Component {
     }
   }
 
-  changePin() {
+  getConfirmation() {
     if (!this.verifyPin()) {
       return;
     }
 
-    const memberDb = this.db.collection("member_list")
-      .doc(this.props.route.params.mobile);
-
-    memberDb.get()
-      .then(doc => {
-        if (doc.exists) {
-          memberDb.update({
-            loginPin: this.state.loginPin
-          });
-
-          this.props.navigation.navigate('HomeComp',
-            {
-              screen: 'Home',
-              params: {
-                user: doc.data()
-              }
-            }
-          );
+    Alert.alert('', 'Are you sure, you want to change your login pin?',
+      [
+        {
+          text: 'Cancel'
+        },
+        {
+          text: 'OK',
+          onPress: () => this.changePin()
         }
+      ]);
+  }
+
+  changePin() {
+    const user = this.props.route.params.user;
+
+    // Encrypt
+    const encryptedPwd = CryptoJS.AES.encrypt(this.state.loginPin, 'chunchun').toString();
+
+    this.db.collection("member_list")
+      .doc(user.mobile).update({
+        loginPin: encryptedPwd
+      }).then(_ => {
+        this.props.navigation.navigate('HomeComp',
+          {
+            screen: 'Home',
+            params: {
+              user
+            }
+          }
+        )
       })
       .catch(error => {
         console.log('Pin error = ', error);
@@ -99,10 +111,10 @@ export default class ChangePin extends Component {
           <Button
             color="#3740FE"
             title="Change Pin"
-            onPress={() => this.changePin()}
+            onPress={() => this.getConfirmation()}
           />
         </View>
-      </KeyboardAwareScrollView>
+      </KeyboardAwareScrollView >
     );
   }
 }

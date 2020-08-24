@@ -137,7 +137,8 @@ export default class Login extends Component {
                             alignItems: 'center',
                             marginTop: 20
                         }}>
-                            <Image source={logo} style={{ marginTop: 10, width: 200, height: 200 }}></Image>
+                            <Image source={logo}
+                                style={{ marginTop: 10, width: 200, height: 200 }}></Image>
                         </View>
                         {!this.state.hasAccount &&
                             <TextInput
@@ -171,7 +172,7 @@ export default class Login extends Component {
                                     screen: 'Register'
                                 }
                             )}>
-                            Don't have account? Click here to signup
+                            Don't have an account? Click here to signup
                       </Text>
                     </View>
                 </ImageBackground>

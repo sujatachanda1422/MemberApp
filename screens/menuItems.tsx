@@ -3,7 +3,8 @@ import {
     StyleSheet,
     View,
     Text,
-    TouchableOpacity
+    TouchableOpacity,
+    Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import { FontAwesome, AntDesign, FontAwesome5 } from '@expo/vector-icons';
@@ -24,20 +25,47 @@ export default class MenuItems extends Component {
         this.setState({ loggedInUser });
     }
 
+    doLogout() {
+        Alert.alert('', 'Are you sure, you want to leave?',
+            [
+                {
+                    text: 'Cancel'
+                },
+                {
+                    text: 'OK',
+                    onPress: () => {
+                        AsyncStorage.removeItem('loggedInUser');
+                        AsyncStorage.removeItem('loggedInMobile');
+
+                        this.props.navigation.navigate('HomeComp',
+                            {
+                                screen: 'Login'
+                            }
+                        )
+                    }
+                }
+            ]);
+    }
+
     async onMenuSelect(item: string) {
+        let user;
+
         switch (item) {
             case 'pin':
+                user = await AsyncStorage.getItem('loggedInUser');
+                user = JSON.parse(user);
+
                 this.props.navigation.navigate('HomeComp',
                     {
                         screen: 'ChangePin',
                         params: {
-                            mobile: loggedInUser
+                            user
                         }
                     }
                 )
                 break;
             case 'subscription':
-                let user = await AsyncStorage.getItem('loggedInUser');
+                user = await AsyncStorage.getItem('loggedInUser');
                 user = JSON.parse(user);
 
                 this.props.navigation.navigate('HomeComp',
@@ -47,7 +75,7 @@ export default class MenuItems extends Component {
                             user
                         }
                     }
-                )
+                );
 
                 break;
             case 'profile':
@@ -55,17 +83,10 @@ export default class MenuItems extends Component {
                     {
                         screen: 'Profile'
                     }
-                )
+                );
                 break;
-            case 'logout':
-                AsyncStorage.removeItem('loggedInUser');
-                AsyncStorage.removeItem('loggedInMobile');
+            case 'logout': this.doLogout();
 
-                this.props.navigation.navigate('HomeComp',
-                    {
-                        screen: 'Login'
-                    }
-                )
                 break;
             case 'login':
                 this.props.navigation.navigate('HomeComp',
@@ -75,14 +96,14 @@ export default class MenuItems extends Component {
                             mobile: loggedInUser
                         }
                     }
-                )
+                );
                 break;
             case 'register':
                 this.props.navigation.navigate('HomeComp',
                     {
                         screen: 'Register'
                     }
-                )
+                );
                 break;
         }
 
