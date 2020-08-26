@@ -23,7 +23,7 @@ export default class Login extends Component {
         super();
         this.state = {
             mobile: null,
-            loginPin: null,
+            loginPin: null, 
             isLoading: false,
             hasAccount: false
         }
@@ -93,7 +93,6 @@ export default class Login extends Component {
                 // Decrypt
                 let bytes = CryptoJS.AES.decrypt(memberDetails.loginPin, 'chunchun');
                 let decryptPassword = bytes.toString(CryptoJS.enc.Utf8);
-                console.log('Text = ', decryptPassword);
 
                 if (this.state.loginPin == decryptPassword) {
                     AsyncStorage.setItem('loggedInMobile', this.state.mobile);

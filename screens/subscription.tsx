@@ -94,7 +94,7 @@ export default class Subscription extends Component {
             status: 'pending',
             package_name: packageDetails.name,
             request_date_time: new Date().toLocaleDateString("en-US"),
-            remaining_chat: docData.remaining_chat + packageDetails.chatNumber
+            remaining_chat: docData.remaining_chat
           });
         } else {
           subscriptionDoc.set(packageDoc);
@@ -186,7 +186,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   package: {
-
     height: 350,
     justifyContent: 'center',
     alignItems: 'center',
@@ -215,12 +214,6 @@ const styles = StyleSheet.create({
   },
   bronze: {
     backgroundColor: '#cd7f32'
-  },
-  gold: {
-    backgroundColor: 'gold'
-  },
-  silver: {
-    backgroundColor: 'silver'
   },
   button: {
     marginHorizontal: 20,

@@ -102,9 +102,10 @@ export default class Signup extends Component {
       city: this.state.city,
       name: this.state.name,
       loginPin: encryptedPwd,
-      dob: this.state.dob,
+      dob: new Date(this.state.dob).getTime(),
       gender: this.state.gender,
-      image: this.state.image
+      image: this.state.image,
+      createdAt: new Date().getTime()
     })
       .then(_ => {
         this.props.navigation.navigate('HomeComp',

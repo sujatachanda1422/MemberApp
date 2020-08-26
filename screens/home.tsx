@@ -13,12 +13,23 @@ import {
 import firebase from '../database/firebase';
 import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-community/async-storage';
+import { FontAwesome } from '@expo/vector-icons';
+import FilterModal from './homeFilterModal';
 
 const image = require("../images/bkg_home.png");
 const userImg = require("../images/user.jpg");
 let loggedInUserMobile: string | null | undefined = null;
 let subscriptionResult: firebase.firestore.DocumentData | undefined = {};
 let chatListResult: firebase.firestore.DocumentData[] = [];
+let filterObj = {
+  age1822: false,
+  age2330: false,
+  age3140: false,
+  age40: false,
+  male: false,
+  female: false,
+  all: false
+};
 
 export default class Home extends Component {
   memberArray: Array<Object> = [];
@@ -31,7 +42,8 @@ export default class Home extends Component {
     this.state = {
       isLoading: false,
       memberList: [],
-      memberDetails: {}
+      memberDetails: {},
+      showFilterModal: false
     };
 
     this.db = firebase.firestore();
@@ -103,6 +115,14 @@ export default class Home extends Component {
       await this.isLoggedIn();
 
       if (loggedInUserMobile !== null) {
+        this.props.navigation.setOptions({
+          headerRight: () => {
+            return <TouchableOpacity onPress={() => this.openFilter()}>
+              <FontAwesome name="filter" size={24} color="white" style={{ marginRight: 25 }} />
+            </TouchableOpacity>;
+          }
+        });
+
         this.checkChatList();
         this.checkForSubscription();
       }
@@ -111,6 +131,12 @@ export default class Home extends Component {
 
   componentWillUnmount() {
     this._unsubscribe();
+  }
+
+  openFilter() {
+    this.setState({ showFilterModal: true });
+
+
   }
 
   checkChatList() {
@@ -176,8 +202,6 @@ export default class Home extends Component {
       .get()
       .then((doc) => {
         subscriptionResult = doc.data();
-
-        console.log('Docdata = ', subscriptionResult);
       })
       .catch(error => {
         console.log('Error = ', error);
@@ -210,7 +234,6 @@ export default class Home extends Component {
         } else if (!subscriptionResult.remaining_chat) {
           this.showSubscriptionError('Your chat limit has exhausted, please re-subscribe again.');
         } else if (subscriptionResult.remaining_chat) {
-          console.log("User = ", this.props.route.params);
           this.props.navigation.navigate('HomeComp',
             {
               screen: 'Chat',
@@ -252,8 +275,144 @@ export default class Home extends Component {
     }
   }
 
-  getAge(dob: string | number | Date) {
-    return Math.floor((new Date() - new Date(dob).getTime()) / 3.15576e+10);
+  getAge(dob: number) {
+    return Math.floor((new Date().getTime() - dob) / 3.15576e+10);
+  }
+
+  onFilterSelect = (data: { age1822: any; age2330: any; age3140: any; age40: any; all: any; male: any; female: any; }) => {
+    this.setState({ showFilterModal: false });
+
+    if (data.isClear) {
+      this.getMemberList();
+    } else if (data.search) {
+      this.getFilteredList(data);
+    }
+
+    if (!data.close) {
+      filterObj = { ...data };
+    }
+
+    console.log("Mount now", data);
+  }
+
+  getTimeFromYear(year: number) {
+    const dateNow = new Date();
+    return new Date(dateNow.getFullYear() - year, dateNow.getMonth(), dateNow.getDate()).getTime();
+  }
+
+  getFilteredData(query: firebase.firestore.Query<firebase.firestore.DocumentData>,
+    stopLoading?: boolean) {
+    return query
+      .orderBy('dob', 'desc')
+      .get().then(querySnapshot => {
+        let docData;
+
+        querySnapshot.forEach((doc) => {
+          docData = doc.data();
+
+          if (docData.mobile !== loggedInUserMobile) {
+            this.memberArray.push(docData);
+          }
+        });
+
+        if (stopLoading) {
+          this.setState({
+            memberList: [...this.memberArray],
+            isLoading: false
+          });
+        }
+        else {
+          this.setState({ memberList: [...this.memberArray] });
+        }
+      })
+      .catch((error) => {
+        this.setState({
+          isLoading: false
+        });
+        console.log('List error = ', error);
+      });
+  }
+
+  getFilteredList(filterObj: { age1822: any; age2330: any; age3140: any; age40: any; all: any; male: any; female: any; }) {
+    let query = this.db.collection("member_list");
+    let start, end;
+    let promiseArr = [], type: string | any[] = [];
+
+    this.memberArray = [];
+
+    // Reset data
+    this.setState({ memberList: [], isLoading: true });
+
+    if (filterObj.age1822) {
+      start = this.getTimeFromYear(18);
+      end = this.getTimeFromYear(22);
+      const age1822 = this.getFilteredData(query.where('dob', '>=', end).where('dob', '<=', start));
+      promiseArr.push(age1822);
+    }
+
+    if (filterObj.age2330) {
+      start = this.getTimeFromYear(23);
+      end = this.getTimeFromYear(30);
+      const age2330 = this.getFilteredData(query.where('dob', '>=', end).where('dob', '<=', start));
+      promiseArr.push(age2330);
+    }
+
+    if (filterObj.age3140) {
+      start = this.getTimeFromYear(31);
+      end = this.getTimeFromYear(40);
+      const age3140 = this.getFilteredData(query.where('dob', '>=', end).where('dob', '<=', start));
+      promiseArr.push(age3140);
+    }
+
+    if (filterObj.age40) {
+      start = this.getTimeFromYear(41);
+      end = this.getTimeFromYear(90);
+      const age40 = this.getFilteredData(query.where('dob', '>=', end).where('dob', '<=', start));
+      promiseArr.push(age40);
+    }
+
+    if (filterObj.male) {
+      type.push('male');
+    } else if (filterObj.female) {
+      type.push('female');
+    } else if (filterObj.all) {
+      type = ['male', 'female'];
+    }
+
+    if (!promiseArr.length && type.length) {
+      this.getFilteredData(query.where('gender', 'in', type), true);
+      return;
+    } else if (type.length) {
+      Promise.all(promiseArr).then(_ => {
+        if (this.state.memberList.length) {
+          this.combinedOfflineFilter(type);
+        } else {
+          this.getFilteredData(query.where('gender', 'in', type), true);
+        }
+      });
+      return;
+    }
+
+    if (promiseArr.length) {
+      Promise.all(promiseArr).then(_ => {
+        this.setState({
+          isLoading: false
+        });
+      });
+    }
+  }
+
+  combinedOfflineFilter(type: string | any[]) {
+    let arr = [...this.state.memberList];
+
+    arr = arr.filter(obj => {
+      return type.indexOf(obj.gender) > -1;
+    });
+
+    this.setState({
+      memberList: [...arr],
+      isLoading: false
+    });
   }
 
   render() {
@@ -269,42 +428,50 @@ export default class Home extends Component {
       <View style={styles.container}>
         <ImageBackground source={image} style={styles.image}>
           <View style={styles.overlay}>
-            <FlatList
-              contentContainerStyle={styles.listContainer}
-              data={this.state.memberList}
-              keyExtractor={(index) => index.mobile}
-              renderItem={({ item }) =>
-                <TouchableOpacity style={styles.item}
-                  onPress={() => this.onMemberClick(item)} >
-                  <View style={styles.listItemWrapper}>
-                    <View style={styles.listItem}>
-                      <Image source={(item.image && item.image !== '') ?
-                        { uri: item.image } : userImg} style={styles.profileImg} />
-                      <View style={{ paddingLeft: 40 }}>
-                        <Text style={styles.nameText}>
-                          {item.name}
-                        </Text>
-                        <View style={styles.listDesc}>
-                          <Text style={{ textTransform: 'capitalize', color: '#000' }}>
-                            City: {item.city}
+            {this.state.showFilterModal === true &&
+              <FilterModal show={filterObj} onFilterSelect={this.onFilterSelect}></FilterModal>
+            }
+            {this.state.memberList.length > 0 &&
+              <FlatList
+                contentContainerStyle={styles.listContainer}
+                data={this.state.memberList}
+                keyExtractor={(index) => index.mobile}
+                renderItem={({ item }) =>
+                  <TouchableOpacity style={styles.item}
+                    onPress={() => this.onMemberClick(item)} >
+                    <View style={styles.listItemWrapper}>
+                      <View style={styles.listItem}>
+                        <Image source={(item.image && item.image !== '') ?
+                          { uri: item.image } : userImg} style={styles.profileImg} />
+                        <View style={{ paddingLeft: 40 }}>
+                          <Text style={styles.nameText}>
+                            {item.name}
                           </Text>
-                          {(item.dob != null && item.dob !== '') &&
-                            <View style={{ flexDirection: 'row' }}>
-                              <Text>,</Text>
-                              <Text style={{ paddingHorizontal: 5, color: '#000' }}>
-                                Age: {this.getAge(item.dob)}
-                              </Text>
-                            </View>
-                          }
+                          <View style={styles.listDesc}>
+                            <Text style={{ textTransform: 'capitalize', color: '#000' }}>
+                              City: {item.city}
+                            </Text>
+                            {item.dob != null && typeof (item.dob) === 'number' &&
+                              <View style={{ flexDirection: 'row' }}>
+                                <Text>,</Text>
+                                <Text style={{ paddingHorizontal: 5, color: '#000' }}>
+                                  Age: {this.getAge(item.dob)}
+                                </Text>
+                              </View>
+                            }
+                          </View>
                         </View>
                       </View>
+                      <View style={{ position: 'absolute', right: 5 }}>
+                        <AntDesign name="right" size={24} color="#dcdcdc" />
+                      </View>
                     </View>
-                    <View style={{ position: 'absolute', right: 5 }}>
-                      <AntDesign name="right" size={24} color="#dcdcdc" />
-                    </View>
-                  </View>
-                </TouchableOpacity>}
-            />
+                  </TouchableOpacity>}
+              />
+            }
+            {!this.state.memberList.length &&
+              <Text style={styles.noMember}>No member found.</Text>
+            }
           </View>
         </ImageBackground>
       </View>
@@ -388,5 +555,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff'
+  },
+  noMember: {
+    fontSize: 26,
+    color: '#000',
+    margin: 30,
+    textAlign: 'center'
   }
 });

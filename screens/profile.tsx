@@ -80,17 +80,24 @@ export default class Profile extends Component {
       isLoading: true
     });
 
-    const { isLoading, showDatePicker, picUpload, oldImage, ...userDetails } = this.state;
+    const newUserDetails = {
+      mobile: this.state.mobile,
+      city: this.state.city,
+      name: this.state.name,
+      dob: new Date(this.state.dob).getTime(),
+      gender: this.state.gender,
+      image: this.state.image
+    };
 
     this.db.collection("member_list")
-      .doc(userDetails.mobile)
-      .update(userDetails)
+      .doc(this.state.mobile)
+      .update(newUserDetails)
       .then(_ => {
         this.setState({
           isLoading: false
         });
 
-        AsyncStorage.setItem('loggedInUser', JSON.stringify(userDetails));
+        AsyncStorage.setItem('loggedInUser', JSON.stringify(newUserDetails));
 
         this.props.navigation.navigate('HomeComp',
           {
@@ -124,7 +131,7 @@ export default class Profile extends Component {
         name: userDetails.name,
         mobile: userDetails.mobile,
         city: userDetails.city,
-        dob: userDetails.dob,
+        dob: new Date(userDetails.dob).toLocaleDateString('en-US'),
         image: userDetails.image,
         oldImage: userDetails.image,
         gender: userDetails.gender,
