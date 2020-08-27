@@ -20,7 +20,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { RadioButton } from 'react-native-paper';
 
 let cityList: firebase.firestore.DocumentData[] = [];
-const userImg = require("../images/user.jpg");
+const userImg = require("../images/boy.jpg");
 
 export default class Profile extends Component {
   db: firebase.firestore.Firestore;
@@ -276,10 +276,10 @@ export default class Profile extends Component {
           </RadioButton.Group>
 
           <TouchableOpacity
-            style={styles.inputStyle}
+            style={[styles.inputStyle, {paddingVertical: 16}]}
             onPress={() => this.setState({ showDatePicker: true })}
           >
-            <Text>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
+            <Text style={{fontSize: 17}}>{this.state.dob ? this.state.dob : 'Date of Birth'}</Text>
           </TouchableOpacity>
           {this.state.showDatePicker &&
             <RNDateTimePicker

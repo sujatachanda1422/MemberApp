@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import firebase from 'firebase';
 
-const userImg = require("../images/user.jpg");
+const userImg = require("../images/boy.jpg");
 
 export default class Chat extends Component {
   db: firebase.firestore.Firestore;

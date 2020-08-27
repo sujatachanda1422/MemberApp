@@ -17,7 +17,9 @@ import { FontAwesome } from '@expo/vector-icons';
 import FilterModal from './homeFilterModal';
 
 const image = require("../images/bkg_home.png");
-const userImg = require("../images/user.jpg");
+const boyImg = require("../images/boy.jpg");
+const girlImg = require("../images/girl.jpg");
+
 let loggedInUserMobile: string | null | undefined = null;
 let subscriptionResult: firebase.firestore.DocumentData | undefined = {};
 let chatListResult: firebase.firestore.DocumentData[] = [];
@@ -208,19 +210,23 @@ export default class Home extends Component {
       });
   }
 
+  navigateToChat(screen: string, from: any,
+    user: { mobile: firebase.firestore.DocumentData; }, isSubscribed: boolean) {
+    this.props.navigation.navigate('HomeComp',
+      {
+        screen,
+        params: {
+          from,
+          user,
+          isSubscribed
+        }
+      });
+  }
+
   verifyOnMemberClick(clickedMember: { mobile: firebase.firestore.DocumentData; }) {
     // Free 1 member chat
     if (!chatListResult.length) {
-      this.props.navigation.navigate('HomeComp',
-        {
-          screen: 'Chat',
-          params: {
-            from: this.props.route.params.user,
-            user: clickedMember,
-            isSubscribed: false
-          }
-        }
-      )
+      this.navigateToChat('Chat', this.props.route.params.user, clickedMember, false);
       return;
     }
 
@@ -232,33 +238,20 @@ export default class Home extends Component {
         if (today > expiryDate) {
           this.showSubscriptionError('Your subscription has been expired, please re-subscribe again.');
         } else if (!subscriptionResult.remaining_chat) {
+          if (chatListResult.indexOf(clickedMember.mobile) > -1) {
+            this.navigateToChat('Chat', this.props.route.params.user, clickedMember, true);
+            return;
+          }
+
           this.showSubscriptionError('Your chat limit has exhausted, please re-subscribe again.');
         } else if (subscriptionResult.remaining_chat) {
-          this.props.navigation.navigate('HomeComp',
-            {
-              screen: 'Chat',
-              params: {
-                from: this.props.route.params.user,
-                user: clickedMember,
-                isSubscribed: true
-              }
-            }
-          )
+          this.navigateToChat('Chat', this.props.route.params.user, clickedMember, true);
         }
       } else if (subscriptionResult.status === 'pending') {
         // If subscription is not expired then user can chat with old contacted members
         if (expiryDate && (today <= expiryDate)
           && chatListResult.indexOf(clickedMember.mobile) > -1) {
-          this.props.navigation.navigate('HomeComp',
-            {
-              screen: 'Chat',
-              params: {
-                from: this.props.route.params.user,
-                user: clickedMember,
-                isSubscribed: true
-              }
-            }
-          )
+          this.navigateToChat('Chat', this.props.route.params.user, clickedMember, true);
         } else {
           Alert.alert('', 'Your subscription request is under pending state and you will be notified once its approved. Thank you!');
         }
@@ -442,7 +435,8 @@ export default class Home extends Component {
                     <View style={styles.listItemWrapper}>
                       <View style={styles.listItem}>
                         <Image source={(item.image && item.image !== '') ?
-                          { uri: item.image } : userImg} style={styles.profileImg} />
+                          { uri: item.image } : (item.gender === 'male' ? boyImg: girlImg)}
+                          style={styles.profileImg} />
                         <View style={{ paddingLeft: 40 }}>
                           <Text style={styles.nameText}>
                             {item.name}

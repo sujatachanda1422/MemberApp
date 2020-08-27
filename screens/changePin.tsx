@@ -56,7 +56,7 @@ export default class ChangePin extends Component {
           text: 'Cancel'
         },
         {
-          text: 'OK',
+          text: 'Yes',
           onPress: () => this.changePin()
         }
       ]);
@@ -72,13 +72,19 @@ export default class ChangePin extends Component {
       .doc(user.mobile).update({
         loginPin: encryptedPwd
       }).then(_ => {
-        this.props.navigation.navigate('HomeComp',
+        Alert.alert('', 'Your pin has been changed successfully', [
           {
-            screen: 'Home',
-            params: {
-              user
-            }
-          }
+            text: 'OK',
+            onPress: () =>
+              this.props.navigation.navigate('HomeComp',
+                {
+                  screen: 'Home',
+                  params: {
+                    user
+                  }
+                }
+              )
+          }]
         )
       })
       .catch(error => {

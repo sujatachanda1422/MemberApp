@@ -8,7 +8,8 @@ import {
     ImageBackground,
     Image,
     Alert,
-    Text
+    Text,
+    BackHandler
 } from 'react-native';
 import firebase from '../database/firebase';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -23,13 +24,17 @@ export default class Login extends Component {
         super();
         this.state = {
             mobile: null,
-            loginPin: null, 
+            // loginPin: '1111',
+            loginPin: null,
             isLoading: false,
             hasAccount: false
         }
     }
 
+
     componentDidMount() {
+        BackHandler.addEventListener('hardwareBackPress', this.handleBackButton);
+
         if (this.props.route.params && this.props.route.params.mobile) {
             this.setState({
                 hasAccount: true,
@@ -41,6 +46,14 @@ export default class Login extends Component {
                 mobile: null
             });
         }
+    }
+
+    componentWillUnmount() {
+        BackHandler.removeEventListener('hardwareBackPress', this.handleBackButton);
+    }
+
+    handleBackButton = () => {
+       return true;
     }
 
     UNSAFE_componentWillReceiveProps() {

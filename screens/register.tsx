@@ -22,7 +22,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 const image = require("../images/sub.jpg");
 const appIcon = require("../images/appIcon.png");
-const userImg = require("../images/user.jpg");
+const userImg = require("../images/boy.jpg");
 
 let cityList: firebase.firestore.DocumentData[] = [];
 
@@ -140,11 +140,38 @@ export default class Signup extends Component {
       });
   }
 
+  sendOTPInMobile() {
+    fetch('https://portal.mobtexting.com/api/v2/sms/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer e4201f40f4681154a8cfda4f5d3e9adc'
+      },
+      body: JSON.stringify({
+        message: 'Test message',
+        to: '9062103433',
+        sender: 'YTHVSN',
+        service: 'T'
+      })
+    })
+      .then((json) => {
+        console.log("Msg 1 = ", json.status, json.ok);
+        return json;
+      })
+      .catch((error) => {
+        console.log("error = ", error);
+        console.error(error);
+      });
+  }
+
   async sendOtp() {
+    // this.sendOTPInMobile();
+    // return;
+
     if (!(/^\d{10}$/).test(this.state.mobile)) {
       Alert.alert('', 'Please provide a valid mobile number');
       return;
     }
+
 
     const isDuplicate = await this.checkDuplicateMobile();
 
