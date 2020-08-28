@@ -140,38 +140,26 @@ export default class Signup extends Component {
       });
   }
 
-  sendOTPInMobile() {
-    fetch('https://portal.mobtexting.com/api/v2/sms/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer e4201f40f4681154a8cfda4f5d3e9adc'
-      },
-      body: JSON.stringify({
-        message: 'Test message',
-        to: '9062103433',
-        sender: 'YTHVSN',
-        service: 'T'
-      })
-    })
+  sendOTPInMobile(mobile: string, otp: number) {
+    const url = 'https://portal.mobtexting.com/api/v2/sms/send';
+    const params = 'access_token=1b28086bb8909e43654a2a100bdfbeb9&sender=YTHVSC&&service=T&'
+    const msg = otp + ' is the OTP for your mobile number verification required to register in ChunChun App.';
+    const fetchUrl = url + '?' + params + 'message=' + msg + '&to=' + mobile;
+
+    fetch(fetchUrl)
       .then((json) => {
-        console.log("Msg 1 = ", json.status, json.ok);
-        return json;
+        console.log('SMS sent ', json.status);
       })
       .catch((error) => {
-        console.log("error = ", error);
-        console.error(error);
+        console.log("SMS error = ", error);
       });
   }
 
   async sendOtp() {
-    // this.sendOTPInMobile();
-    // return;
-
     if (!(/^\d{10}$/).test(this.state.mobile)) {
       Alert.alert('', 'Please provide a valid mobile number');
       return;
     }
-
 
     const isDuplicate = await this.checkDuplicateMobile();
 
@@ -180,10 +168,14 @@ export default class Signup extends Component {
       return;
     }
 
-    this.db.collection("member_list").doc(this.state.mobile).set({
-      otp: Math.floor(1000 + Math.random() * 9000)
-    })
+    const otp = Math.floor(1000 + Math.random() * 9000);
+
+    this.db.collection("member_list")
+      .doc(this.state.mobile)
+      .set({ otp })
       .then(_ => {
+        this.sendOTPInMobile(this.state.mobile, otp);
+
         this.setState({
           doOTPVerify: true,
           doMobileVerify: false
