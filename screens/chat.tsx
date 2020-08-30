@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import firebase from 'firebase';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const userImg = require("../images/boy.jpg");
 
@@ -19,6 +20,7 @@ export default class Chat extends Component {
     super(props);
 
     this.state = {
+      isUserOnline: false,
       person: {
         from: this.props.route.params.from.mobile,
         to: this.props.route.params.user.mobile,
@@ -32,21 +34,24 @@ export default class Chat extends Component {
     this.db = firebase.firestore();
   }
 
-  componentDidMount() {
-    this.props.navigation.setOptions({
-      title: this.props.route.params.user.name
-    });
-
-  }
-
   UNSAFE_componentWillMount() {
+    let chatVal, isFromLoggedInUser;
+
     firebase
       .database()
       .ref('messages')
       .child(this.state.person.from)
       .child(this.state.person.to)
       .on('child_added', value => {
-        // console.log("Old chats == ", value.val());
+        chatVal = value.val();
+        // console.log("Val = ", chatVal);
+
+        isFromLoggedInUser = chatVal.from === this.state.person.from;
+
+        if (this.state.isUserOnline && !isFromLoggedInUser
+          && !chatVal.read) {
+          this.setReadStatus(chatVal);
+        }
 
         this.setState(prevState => {
           return {
@@ -54,6 +59,87 @@ export default class Chat extends Component {
           };
         });
       });
+
+    this.setUserOnlineStatus();
+    this.updateOnlineStatus(true);
+  }
+
+  setUserOnlineStatus() {
+    let onlineVal, showStatus: {} | null | undefined;
+
+    firebase
+      .database()
+      .ref('recents')
+      .child(this.state.person.to)
+      .child(this.state.person.from)
+      .on('value', value => {
+        onlineVal = value.val() && value.val().online;
+        this.setState({ isUserOnline: onlineVal });
+        showStatus = onlineVal ? 'Online' : 'Offline';
+
+        if (onlineVal) {
+          this.setMsgRead();
+        }
+
+        this.props.navigation.setOptions({
+          headerTitle: () => {
+            return (
+              <View style={{ marginLeft: -15 }}>
+                <Text style={{ fontSize: 22, color: '#fff' }}>
+                  {this.props.route.params.user.name}
+                </Text>
+                <Text style={{ color: '#fff' }}>{showStatus}</Text>
+              </View>
+            )
+          }
+        });
+      });
+  }
+
+  async setMsgRead() {
+    let msgListArr = [...this.state.messageList];
+    const len = msgListArr.length;
+
+    let ref = firebase.database().ref('recents/' + this.state.person.from + '/' + this.state.person.to);
+
+    const message = await ref.once("value").then(function (snapshot) {
+      return snapshot.val();
+    });
+
+    const unreadArr = message ? message.unread: null;
+
+    if (!unreadArr) return;
+    const unreadArrLen = unreadArr.length;
+
+    for (let i = 0; i < unreadArrLen; i++) {
+      firebase
+        .database()
+        .ref('messages/' + this.state.person.from + '/' + this.state.person.to + '/' + unreadArr[i])
+        .update({ read: true });
+
+      for (let j = len - 1; j >= len - 40; j--) {
+        if (msgListArr[j] &&
+          msgListArr[j].key === unreadArr[i]) {
+          msgListArr[j]['read'] = true;
+          break;
+        }
+      }
+    };
+
+    this.setState({ messageList: msgListArr });
+    ref.update({ unread: [] });
+  }
+
+  setReadStatus(msgObj: { [x: string]: boolean; key: string; }) {
+    firebase
+      .database()
+      .ref('messages/' + this.state.person.from + '/' + this.state.person.to +
+        '/' + msgObj.key)
+      .update({ read: true });
+  }
+
+  componentWillUnmount() {
+    this.updateOnlineStatus(false);
   }
 
   handleChange = key => val => {
@@ -111,6 +197,30 @@ export default class Chat extends Component {
       });
   }
 
+  updateOnlineStatus(status: boolean) {
+    firebase
+      .database()
+      .ref('recents/' + this.state.person.from + '/' + this.state.person.to)
+      .update({
+        online: status
+      });
+  }
+
+  async setUnreadCount(msgId: string | null) {
+    let ref = firebase.database().ref('recents/' + this.state.person.from + '/' + this.state.person.to);
+
+    let message = await ref.once("value").then(function (snapshot) {
+      return snapshot.val();
+    });
+
+    let unreadArr = message.unread || [];
+    unreadArr.push(msgId);
+
+    message['unread'] = unreadArr;
+
+    ref.update({ unread: unreadArr });
+  }
+
   sendMessage = async () => {
     if (this.state.textMessage.length) {
       if (!this.state.messageList.length) {
@@ -123,17 +233,22 @@ export default class Chat extends Component {
         .child(this.state.person.from)
         .child(this.state.person.to)
         .push().key;
+
+      this.setUnreadCount(msgId);
+
       let updates = {};
       let message = {
         message: this.state.textMessage,
         time: firebase.database.ServerValue.TIMESTAMP,
         from: this.state.person.from,
-        image: this.state.person.loggedInMember.image
+        read: this.state.isUserOnline,
+        key: msgId
       };
 
       updates[
         'messages/' + this.state.person.from + '/' + this.state.person.to + '/' + msgId
       ] = message;
+
       updates[
         'messages/' + this.state.person.to + '/' + this.state.person.from + '/' + msgId
       ] = message;
@@ -154,18 +269,20 @@ export default class Chat extends Component {
   renderRow = ({ item, index }) => {
     const isSenderSame = this.isSenderSame(item, this.state.messageList[index - 1]);
     const isFromLoggedInUser = item.from === this.state.person.from;
+    const img = isFromLoggedInUser ? this.state.person.loggedInMember.image :
+      this.state.person.user.image;
 
     return (
       <View
         style={{
           flexDirection: 'column',
-          maxWidth: '70%',
+          maxWidth: '85%',
           minWidth: 100,
           alignSelf: isFromLoggedInUser ? 'flex-end' : 'flex-start',
           marginBottom: 5
         }}>
         {!isSenderSame &&
-          <Image source={(item.image && item.image !== '') ? { uri: item.image } : userImg}
+          <Image source={img ? { uri: img } : userImg}
             style={[styles.profileImg,
             { alignSelf: isFromLoggedInUser ? 'flex-end' : 'flex-start' }]} />
         }
@@ -180,12 +297,19 @@ export default class Chat extends Component {
           }]}>
             {item.message}
           </Text>
-          <Text style={{
-            color: '#e6e6e6', marginTop: 0, fontSize: 12,
+          <View style={{
+            flexDirection: 'row', marginTop: 0,
             alignSelf: isFromLoggedInUser ? 'flex-end' : 'flex-start'
           }}>
-            {this.convertTime(item.time)}
-          </Text>
+            <Text style={{ color: '#fff', fontSize: 12 }}>
+              {this.convertTime(item.time)}
+            </Text>
+            {isFromLoggedInUser &&
+              <MaterialCommunityIcons name="check-all" size={14}
+                style={{ marginLeft: 5 }}
+                color={item.read ? "blue" : "white"} />
+            }
+          </View>
         </View>
       </View>
     );
@@ -195,6 +319,7 @@ export default class Chat extends Component {
     return (
       <View style={{ display: "flex", flexDirection: 'column', height: '100%' }}>
         <FlatList
+          extraData={this.state.messageList}
           contentContainerStyle={{ paddingVertical: 10 }}
           style={{ paddingHorizontal: 10 }}
           data={this.state.messageList}

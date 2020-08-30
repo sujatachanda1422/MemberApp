@@ -32,7 +32,7 @@ export default class MenuItems extends Component {
                     text: 'Cancel'
                 },
                 {
-                    text: 'OK',
+                    text: 'Yes',
                     onPress: () => {
                         AsyncStorage.removeItem('loggedInUser');
                         AsyncStorage.removeItem('loggedInMobile');

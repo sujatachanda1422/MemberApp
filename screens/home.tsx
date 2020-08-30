@@ -78,6 +78,7 @@ export default class Home extends Component {
 
           if ((!loggedInUserMobile || docData.mobile !== loggedInUserMobile)
             && docData.name) {
+            docData.count = 0;
             this.memberArray.push(docData);
           }
         });
@@ -99,6 +100,13 @@ export default class Home extends Component {
   }
 
   async UNSAFE_componentWillMount() {
+    // await this.isLoggedIn();
+    // this.getMemberList();
+    // this.attachUnreadCountEvent();
+
+    // return;
+
+
     await this.isLoggedIn();
 
     if (loggedInUserMobile !== null) {
@@ -109,6 +117,7 @@ export default class Home extends Component {
             mobile: loggedInUserMobile
           }
         });
+      this.attachUnreadCountEvent();
     } else {
       this.getMemberList();
     }
@@ -131,14 +140,27 @@ export default class Home extends Component {
     });
   }
 
+  attachUnreadCountEvent() {
+    firebase
+      .database()
+      .ref('recents')
+      .child(loggedInUserMobile)
+      .on('child_added', (value, a) => {
+        console.log("Val 2 = ", a, value.val());
+        // this.attachChildUnreadEvent(value.val());
+      });
+  }
+
+  attachChildUnreadEvent() {
+
+  }
+
   componentWillUnmount() {
     this._unsubscribe();
   }
 
   openFilter() {
     this.setState({ showFilterModal: true });
-
-
   }
 
   checkChatList() {
@@ -304,6 +326,7 @@ export default class Home extends Component {
           docData = doc.data();
 
           if (docData.mobile !== loggedInUserMobile) {
+            docData.count = 0;
             this.memberArray.push(docData);
           }
         });
@@ -428,6 +451,7 @@ export default class Home extends Component {
               <FlatList
                 contentContainerStyle={styles.listContainer}
                 data={this.state.memberList}
+                extraData={this.state.memberList}
                 keyExtractor={(index) => index.mobile}
                 renderItem={({ item }) =>
                   <TouchableOpacity style={styles.item}
@@ -435,9 +459,9 @@ export default class Home extends Component {
                     <View style={styles.listItemWrapper}>
                       <View style={styles.listItem}>
                         <Image source={(item.image && item.image !== '') ?
-                          { uri: item.image } : (item.gender === 'male' ? boyImg: girlImg)}
+                          { uri: item.image } : (item.gender === 'male' ? boyImg : girlImg)}
                           style={styles.profileImg} />
-                        <View style={{ paddingLeft: 40 }}>
+                        <View style={{ paddingLeft: 20 }}>
                           <Text style={styles.nameText}>
                             {item.name}
                           </Text>
@@ -456,7 +480,10 @@ export default class Home extends Component {
                           </View>
                         </View>
                       </View>
-                      <View style={{ position: 'absolute', right: 5 }}>
+                      <View style={{}}>
+                        <Text>{item.count}</Text>
+                      </View>
+                      <View style={{}}>
                         <AntDesign name="right" size={24} color="#dcdcdc" />
                       </View>
                     </View>
@@ -500,7 +527,8 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 30,
-    marginLeft: -25,
+    marginLeft: -38,
+    top: 12,
     position: 'absolute'
   },
   item: {
@@ -511,15 +539,16 @@ const styles = StyleSheet.create({
   listItemWrapper: {
     display: 'flex',
     paddingLeft: 15,
+    marginLeft: 10,
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   listItem: {
     display: 'flex',
     paddingVertical: 5,
     marginBottom: 6,
     flex: 1,
-    backgroundColor: '#fff',
     justifyContent: 'center'
   },
   listDesc: {

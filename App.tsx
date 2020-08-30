@@ -60,6 +60,9 @@ function HomeComp() {
       <Stack.Screen
         name="Chat"
         component={Chat}
+        options={{
+          headerTitleAlign: 'left',
+        }}
       />
       <Stack.Screen
         name="Profile"
