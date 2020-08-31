@@ -100,13 +100,13 @@ export default class Chat extends Component {
     let msgListArr = [...this.state.messageList];
     const len = msgListArr.length;
 
-    let ref = firebase.database().ref('recents/' + this.state.person.from + '/' + this.state.person.to);
+    let ref = firebase.database().ref('recents/' + this.state.person.to + '/' + this.state.person.from);
 
     const message = await ref.once("value").then(function (snapshot) {
       return snapshot.val();
     });
 
-    const unreadArr = message ? message.unread: null;
+    const unreadArr = message ? message.unread : null;
 
     if (!unreadArr) return;
     const unreadArrLen = unreadArr.length;
@@ -158,16 +158,16 @@ export default class Chat extends Component {
   }
 
   setChatListDb() {
-    let batch = this.db.batch();
+    const batch = this.db.batch();
 
-    let fromRef = this.db.collection("chat_list")
+    const fromRef = this.db.collection("chat_list")
       .doc(this.state.person.from)
       .collection('members')
       .doc(this.state.person.user.mobile);
 
     batch.set(fromRef, this.state.person.user);
 
-    let toRef = this.db.collection("chat_list")
+    const toRef = this.db.collection("chat_list")
       .doc(this.state.person.to)
       .collection('members')
       .doc(this.state.person.loggedInMember.mobile);
@@ -207,18 +207,19 @@ export default class Chat extends Component {
   }
 
   async setUnreadCount(msgId: string | null) {
-    let ref = firebase.database().ref('recents/' + this.state.person.from + '/' + this.state.person.to);
+    let ref = firebase.database().ref('recents/' + this.state.person.to + '/' + this.state.person.from);
 
     let message = await ref.once("value").then(function (snapshot) {
       return snapshot.val();
     });
 
-    let unreadArr = message.unread || [];
+    let unreadArr = message && message.unread ? message.unread : [];
     unreadArr.push(msgId);
 
+    message = message || {};
     message['unread'] = unreadArr;
 
-    ref.update({ unread: unreadArr });
+    ref.set(message);
   }
 
   sendMessage = async () => {
@@ -234,7 +235,9 @@ export default class Chat extends Component {
         .child(this.state.person.to)
         .push().key;
 
-      this.setUnreadCount(msgId);
+      if (!this.state.isUserOnline) {
+        this.setUnreadCount(msgId);
+      }
 
       let updates = {};
       let message = {

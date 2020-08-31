@@ -20,6 +20,8 @@ const image = require("../images/bkg_home.png");
 const boyImg = require("../images/boy.jpg");
 const girlImg = require("../images/girl.jpg");
 
+let unreadMsgObj = {};
+let eventAttached = false;
 let loggedInUserMobile: string | null | undefined = null;
 let subscriptionResult: firebase.firestore.DocumentData | undefined = {};
 let chatListResult: firebase.firestore.DocumentData[] = [];
@@ -53,6 +55,11 @@ export default class Home extends Component {
 
   UNSAFE_componentWillReceiveProps() {
     this.getMemberList();
+
+    // attach the event once
+    if (!eventAttached) {
+      this.attachUnreadCountEvent();
+    }
   }
 
   getMemberList() {
@@ -84,6 +91,10 @@ export default class Home extends Component {
         });
 
         this.setState({ memberList: [...this.memberArray] });
+
+        if (Object.keys(unreadMsgObj).length) {
+          this.showUnreadCount();
+        }
       })
       .catch(error => {
         this.setState({
@@ -101,11 +112,10 @@ export default class Home extends Component {
 
   async UNSAFE_componentWillMount() {
     // await this.isLoggedIn();
-    // this.getMemberList();
+    // await this.getMemberList();
     // this.attachUnreadCountEvent();
 
     // return;
-
 
     await this.isLoggedIn();
 
@@ -117,7 +127,6 @@ export default class Home extends Component {
             mobile: loggedInUserMobile
           }
         });
-      this.attachUnreadCountEvent();
     } else {
       this.getMemberList();
     }
@@ -141,14 +150,49 @@ export default class Home extends Component {
   }
 
   attachUnreadCountEvent() {
+    eventAttached = true;
+
     firebase
       .database()
       .ref('recents')
       .child(loggedInUserMobile)
-      .on('child_added', (value, a) => {
-        console.log("Val 2 = ", a, value.val());
+      .on('value', (value) => {
         // this.attachChildUnreadEvent(value.val());
+        unreadMsgObj = {};
+        const val = value.val();
+        for (let i in val) {
+          if (val[i].unread) {
+            unreadMsgObj[i] = val[i].unread.length;
+          }
+        }
+
+        if (Object.keys(unreadMsgObj).length) {
+          this.showUnreadCount();
+        }
       });
+  }
+
+  showUnreadCount() {
+    let mobile;
+    let memberListArr = [...this.state.memberList];
+    let sortedArr: any[] = [];
+
+    for (let i = 0; i < memberListArr.length; i++) {
+      mobile = memberListArr[i].mobile;
+      if (unreadMsgObj[mobile]) {
+        memberListArr[i].count = unreadMsgObj[mobile];
+      } else {
+        memberListArr[i].count = 0;
+      }
+    }
+
+
+    // memberListArr.map((member) => {
+    //   sortedArr[chatListResult.indexOf(member.mobile)] = member;
+    // });
+
+
+    this.setState({ memberList: memberListArr });
   }
 
   attachChildUnreadEvent() {
@@ -176,6 +220,36 @@ export default class Home extends Component {
         });
 
         chatListResult = docData;
+
+        chatListResult.sort((mobile1, mobile2) => {
+          if (unreadMsgObj[mobile1]) {
+            return -1;
+          };
+          if (unreadMsgObj[mobile2]) {
+            return 1;
+          };
+        });
+
+        this.state.memberList.sort((member1, member2) => {
+          // console.log("chatListResult", chatListResult);
+
+          if (chatListResult.indexOf(member1.mobile) > -1) {
+            return -1;
+          };
+          if (chatListResult.indexOf(member2.mobile) > -1) {
+            return 1;
+          };
+          // 
+
+          // if (chatListResult.indexOf(member2.mobile) >
+          //   chatListResult.indexOf(member1.mobile)
+          //   || (chatListResult.indexOf(member1.mobile) > -1
+          //   || chatListResult.indexOf(member2.mobile) > -1)) {
+          //   return -1;
+          // } else {
+          //   return 1;
+          // }
+        });
       })
       .catch(error => {
         console.log('Error = ', error);
@@ -279,6 +353,11 @@ export default class Home extends Component {
         }
       }
     } else {
+      if (chatListResult.indexOf(clickedMember.mobile) > -1) {
+        this.navigateToChat('Chat', this.props.route.params.user, clickedMember, true);
+        return;
+      }
+
       this.props.navigation.navigate('HomeComp',
         {
           screen: 'Subscription',
@@ -480,9 +559,11 @@ export default class Home extends Component {
                           </View>
                         </View>
                       </View>
-                      <View style={{}}>
-                        <Text>{item.count}</Text>
-                      </View>
+                      {item.count > 0 &&
+                        <View>
+                          <Text style={styles.unreadCount} >{item.count}</Text>
+                        </View>
+                      }
                       <View style={{}}>
                         <AntDesign name="right" size={24} color="#dcdcdc" />
                       </View>
@@ -517,6 +598,16 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingLeft: 15,
     paddingRight: 10
+  },
+  unreadCount: {
+    backgroundColor: '#de5656',
+    borderRadius: 24,
+    width: 24,
+    height: 24,
+    lineHeight: 24,
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#fff'
   },
   image: {
     flex: 1,
