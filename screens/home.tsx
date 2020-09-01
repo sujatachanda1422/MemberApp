@@ -56,7 +56,13 @@ export default class Home extends Component {
   UNSAFE_componentWillReceiveProps() {
     this.getMemberList();
 
-    // attach the event once
+    console.log("Sort 1", this.props.route.params);
+
+    // if(this.props.navigation.params.fromChatPage) {
+    //   console.log("Sort");
+    // }
+
+    // since this is called after login is completed
     if (!eventAttached) {
       this.attachUnreadCountEvent();
     }
@@ -106,17 +112,9 @@ export default class Home extends Component {
 
   async isLoggedIn() {
     loggedInUserMobile = await AsyncStorage.getItem('loggedInMobile');
-
-    console.log('loggedInMobile == ', loggedInUserMobile);
   }
 
   async UNSAFE_componentWillMount() {
-    // await this.isLoggedIn();
-    // await this.getMemberList();
-    // this.attachUnreadCountEvent();
-
-    // return;
-
     await this.isLoggedIn();
 
     if (loggedInUserMobile !== null) {
@@ -157,7 +155,6 @@ export default class Home extends Component {
       .ref('recents')
       .child(loggedInUserMobile)
       .on('value', (value) => {
-        // this.attachChildUnreadEvent(value.val());
         unreadMsgObj = {};
         const val = value.val();
         for (let i in val) {
@@ -186,17 +183,7 @@ export default class Home extends Component {
       }
     }
 
-
-    // memberListArr.map((member) => {
-    //   sortedArr[chatListResult.indexOf(member.mobile)] = member;
-    // });
-
-
     this.setState({ memberList: memberListArr });
-  }
-
-  attachChildUnreadEvent() {
-
   }
 
   componentWillUnmount() {
@@ -230,25 +217,13 @@ export default class Home extends Component {
           };
         });
 
+        let member1Index, member2Index;
         this.state.memberList.sort((member1, member2) => {
-          // console.log("chatListResult", chatListResult);
+          member1Index = chatListResult.indexOf(member1.mobile);
+          member2Index = chatListResult.indexOf(member2.mobile);
 
-          if (chatListResult.indexOf(member1.mobile) > -1) {
-            return -1;
-          };
-          if (chatListResult.indexOf(member2.mobile) > -1) {
-            return 1;
-          };
-          // 
-
-          // if (chatListResult.indexOf(member2.mobile) >
-          //   chatListResult.indexOf(member1.mobile)
-          //   || (chatListResult.indexOf(member1.mobile) > -1
-          //   || chatListResult.indexOf(member2.mobile) > -1)) {
-          //   return -1;
-          // } else {
-          //   return 1;
-          // }
+          return (member1Index > -1 ? member1Index : Infinity)
+            - (member2Index > -1 ? member2Index : Infinity);
         });
       })
       .catch(error => {
@@ -333,7 +308,7 @@ export default class Home extends Component {
       if (subscriptionResult.status === 'accepted') {
         if (today > expiryDate) {
           this.showSubscriptionError('Your subscription has been expired, please re-subscribe again.');
-        } else if (!subscriptionResult.remaining_chat) {
+        } else if (subscriptionResult.remaining_chat < 1) {
           if (chatListResult.indexOf(clickedMember.mobile) > -1) {
             this.navigateToChat('Chat', this.props.route.params.user, clickedMember, true);
             return;
@@ -385,8 +360,6 @@ export default class Home extends Component {
     if (!data.close) {
       filterObj = { ...data };
     }
-
-    console.log("Mount now", data);
   }
 
   getTimeFromYear(year: number) {

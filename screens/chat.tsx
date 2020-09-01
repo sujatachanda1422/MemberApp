@@ -7,9 +7,11 @@ import {
   FlatList,
   Image,
   StyleSheet,
+  BackHandler,
 } from 'react-native';
 import firebase from 'firebase';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { HeaderBackButton } from '@react-navigation/stack';
 
 const userImg = require("../images/boy.jpg");
 
@@ -32,6 +34,28 @@ export default class Chat extends Component {
     };
 
     this.db = firebase.firestore();
+  }
+
+  componentDidMount() {
+    // BackHandler.addEventListener('hardwareBackPress', this.handleBackButton);
+
+    // this.props.navigation.setOptions({
+    //   headerLeft: () => <HeaderBackButton tintColor="white" onPress={this.handleBackButton} />
+    // });
+  }
+
+  handleBackButton = () => {
+    console.log("Back = ");
+    this.props.navigation.navigate('HomeComp',
+      {
+        screen: 'Home',
+        params: {
+          fromChatPage: this.props.route.params.user.mobile
+        }
+      }
+    );
+
+    return true;
   }
 
   UNSAFE_componentWillMount() {
@@ -140,6 +164,7 @@ export default class Chat extends Component {
 
   componentWillUnmount() {
     this.updateOnlineStatus(false);
+    // BackHandler.removeEventListener('hardwareBackPress', this.handleBackButton);
   }
 
   handleChange = key => val => {

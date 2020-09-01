@@ -53,7 +53,7 @@ export default class Login extends Component {
     }
 
     handleBackButton = () => {
-       return true;
+        BackHandler.exitApp();
     }
 
     UNSAFE_componentWillReceiveProps() {
