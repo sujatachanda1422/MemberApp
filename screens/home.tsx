@@ -39,6 +39,9 @@ export default class Home extends Component {
   memberArray: Array<Object> = [];
   db: firebase.firestore.Firestore;
   _unsubscribe: any = () => { };
+  memberListPromise: Promise<Object[]> | undefined;
+  unreadObjPromise: Promise<{}>;
+  chatListPromise: Promise<firebase.firestore.DocumentData[]>;
 
   constructor() {
     super();
@@ -55,8 +58,6 @@ export default class Home extends Component {
 
   UNSAFE_componentWillReceiveProps() {
     this.getMemberList();
-
-    console.log("Sort 1", this.props.route.params);
 
     // if(this.props.navigation.params.fromChatPage) {
     //   console.log("Sort");
@@ -96,11 +97,13 @@ export default class Home extends Component {
           }
         });
 
+        this.memberListPromise = Promise.resolve(this.memberArray);
+
         this.setState({ memberList: [...this.memberArray] });
 
-        if (Object.keys(unreadMsgObj).length) {
-          this.showUnreadCount();
-        }
+        // if (Object.keys(unreadMsgObj).length) {
+        this.showUnreadCount();
+        // }
       })
       .catch(error => {
         this.setState({
@@ -141,6 +144,8 @@ export default class Home extends Component {
           }
         });
 
+        console.log("Sort 1", this.props.route.params);
+
         this.checkChatList();
         this.checkForSubscription();
       }
@@ -157,22 +162,24 @@ export default class Home extends Component {
       .on('value', (value) => {
         unreadMsgObj = {};
         const val = value.val();
+
         for (let i in val) {
           if (val[i].unread) {
             unreadMsgObj[i] = val[i].unread.length;
           }
         }
 
-        if (Object.keys(unreadMsgObj).length) {
-          this.showUnreadCount();
-        }
+        this.unreadObjPromise = Promise.resolve(unreadMsgObj);
+
+        this.sortUnread();
+
+        this.showUnreadCount();
       });
   }
 
   showUnreadCount() {
     let mobile;
     let memberListArr = [...this.state.memberList];
-    let sortedArr: any[] = [];
 
     for (let i = 0; i < memberListArr.length; i++) {
       mobile = memberListArr[i].mobile;
@@ -208,27 +215,40 @@ export default class Home extends Component {
 
         chatListResult = docData;
 
-        chatListResult.sort((mobile1, mobile2) => {
-          if (unreadMsgObj[mobile1]) {
-            return -1;
-          };
-          if (unreadMsgObj[mobile2]) {
-            return 1;
-          };
-        });
+        this.chatListPromise = Promise.resolve(docData);
 
-        let member1Index, member2Index;
-        this.state.memberList.sort((member1, member2) => {
-          member1Index = chatListResult.indexOf(member1.mobile);
-          member2Index = chatListResult.indexOf(member2.mobile);
-
-          return (member1Index > -1 ? member1Index : Infinity)
-            - (member2Index > -1 ? member2Index : Infinity);
-        });
+        // this.sortUnread();
       })
       .catch(error => {
         console.log('Error = ', error);
       });
+  }
+
+  sortUnread() {
+    Promise.all([this.chatListPromise,
+    this.memberListPromise, this.unreadObjPromise]).then(_ => {
+      chatListResult.sort((mobile1, mobile2) => {
+        if (unreadMsgObj[mobile1]) {
+          return -1;
+        }
+        if (unreadMsgObj[mobile2]) {
+          return 1;
+        }
+      });
+
+      let member1Index, member2Index;
+      this.state.memberList.sort((member1, member2) => {
+        member1Index = chatListResult.indexOf(member1.mobile);
+        member2Index = chatListResult.indexOf(member2.mobile);
+
+        return (member1Index > -1 ? member1Index : Infinity)
+          - (member2Index > -1 ? member2Index : Infinity);
+      });
+
+      console.log("chatListResult = ", chatListResult);
+      console.log("unreadMsgObj = ", unreadMsgObj);
+      // console.log("memberList = ", this.state.memberList);
+    });
   }
 
   onMemberClick(item: { mobile: firebase.firestore.DocumentData; }) {

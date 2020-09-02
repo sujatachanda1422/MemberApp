@@ -80,6 +80,7 @@ export default class ChangePin extends Component {
                 {
                   screen: 'Home',
                   params: {
+                    fromLogin: false,
                     user
                   }
                 }

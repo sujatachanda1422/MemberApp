@@ -46,16 +46,16 @@ export default class Chat extends Component {
 
   handleBackButton = () => {
     console.log("Back = ");
-    this.props.navigation.navigate('HomeComp',
-      {
-        screen: 'Home',
-        params: {
-          fromChatPage: this.props.route.params.user.mobile
-        }
-      }
-    );
+    // this.props.navigation.navigate('HomeComp',
+    //   {
+    //     screen: 'Home',
+    //     params: {
+    //       fromChatPage: this.props.route.params.user.mobile
+    //     }
+    //   }
+    // );
 
-    return true;
+    // return true;
   }
 
   UNSAFE_componentWillMount() {
@@ -130,6 +130,8 @@ export default class Chat extends Component {
       return snapshot.val();
     });
 
+    console.log("unreadArr = ",  this.state.person.to + '/' + this.state.person.from, message);
+
     const unreadArr = message ? message.unread : null;
 
     if (!unreadArr) return;
@@ -164,6 +166,16 @@ export default class Chat extends Component {
 
   componentWillUnmount() {
     this.updateOnlineStatus(false);
+
+  //   this.props.navigation.navigate('HomeComp',
+  //   {
+  //     screen: 'Home',
+  //     params: {
+  //       fromLogin: false,
+  //       fromChatPage: this.props.route.params.user.mobile
+  //     }
+  //   }
+  // );
     // BackHandler.removeEventListener('hardwareBackPress', this.handleBackButton);
   }
 
@@ -351,6 +363,7 @@ export default class Chat extends Component {
           contentContainerStyle={{ paddingVertical: 10 }}
           style={{ paddingHorizontal: 10 }}
           data={this.state.messageList}
+          initialNumToRender={10}
           ref={ref => this.flatList = ref}
           onContentSizeChange={() => this.flatList.scrollToEnd({ animated: true })}
           onLayout={() => this.flatList.scrollToEnd({ animated: true })}

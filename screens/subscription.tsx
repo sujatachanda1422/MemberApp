@@ -109,6 +109,7 @@ export default class Subscription extends Component {
                   {
                     screen: 'Home',
                     params: {
+                      fromLogin: false,
                       user: this.props.route.params.user
                     }
                   }
