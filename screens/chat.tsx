@@ -6,12 +6,10 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
-  StyleSheet,
-  BackHandler,
+  StyleSheet
 } from 'react-native';
 import firebase from 'firebase';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { HeaderBackButton } from '@react-navigation/stack';
 
 const userImg = require("../images/boy.jpg");
 
@@ -36,29 +34,7 @@ export default class Chat extends Component {
     this.db = firebase.firestore();
   }
 
-  componentDidMount() {
-    // BackHandler.addEventListener('hardwareBackPress', this.handleBackButton);
-
-    // this.props.navigation.setOptions({
-    //   headerLeft: () => <HeaderBackButton tintColor="white" onPress={this.handleBackButton} />
-    // });
-  }
-
-  handleBackButton = () => {
-    console.log("Back = ");
-    // this.props.navigation.navigate('HomeComp',
-    //   {
-    //     screen: 'Home',
-    //     params: {
-    //       fromChatPage: this.props.route.params.user.mobile
-    //     }
-    //   }
-    // );
-
-    // return true;
-  }
-
-  UNSAFE_componentWillMount() {
+  async componentDidMount() {
     let chatVal, isFromLoggedInUser;
 
     firebase
@@ -68,8 +44,6 @@ export default class Chat extends Component {
       .child(this.state.person.to)
       .on('child_added', value => {
         chatVal = value.val();
-        // console.log("Val = ", chatVal);
-
         isFromLoggedInUser = chatVal.from === this.state.person.from;
 
         if (this.state.isUserOnline && !isFromLoggedInUser
@@ -84,6 +58,15 @@ export default class Chat extends Component {
         });
       });
 
+    firebase
+      .database()
+      .ref('messages')
+      .child(this.state.person.from)
+      .child(this.state.person.to)
+      .once("value").then(_ => {
+        this.setMsgRead(true);
+      });
+
     this.setUserOnlineStatus();
     this.updateOnlineStatus(true);
   }
@@ -94,15 +77,16 @@ export default class Chat extends Component {
     firebase
       .database()
       .ref('recents')
-      .child(this.state.person.to)
       .child(this.state.person.from)
+      .child(this.state.person.to)
       .on('value', value => {
-        onlineVal = value.val() && value.val().online;
+        onlineVal = value.val() && value.val().online ? value.val().online : false;
+
         this.setState({ isUserOnline: onlineVal });
         showStatus = onlineVal ? 'Online' : 'Offline';
 
         if (onlineVal) {
-          this.setMsgRead();
+          this.setMsgRead(false);
         }
 
         this.props.navigation.setOptions({
@@ -120,17 +104,32 @@ export default class Chat extends Component {
       });
   }
 
-  async setMsgRead() {
+  setReadStatus(msgObj: { [x: string]: boolean; key: string; }) {
+    firebase
+      .database()
+      .ref('messages/' + this.state.person.from + '/' + this.state.person.to +
+        '/' + msgObj.key)
+      .update({ read: true });
+  }
+
+
+  async setMsgRead(fromMount: boolean) {
     let msgListArr = [...this.state.messageList];
     const len = msgListArr.length;
 
-    let ref = firebase.database().ref('recents/' + this.state.person.to + '/' + this.state.person.from);
+    if (!len) return;
+
+    const direction1 = this.state.person.from + '/' + this.state.person.to;
+    const direction2 = this.state.person.to + '/' + this.state.person.from;
+
+    const fromMountDir = fromMount ? direction1 : direction2;
+    const fromMountDirOpp = fromMount ? direction2 : direction1;
+
+    let ref = firebase.database().ref('recents/' + fromMountDir);
 
     const message = await ref.once("value").then(function (snapshot) {
       return snapshot.val();
     });
-
-    console.log("unreadArr = ",  this.state.person.to + '/' + this.state.person.from, message);
 
     const unreadArr = message ? message.unread : null;
 
@@ -140,7 +139,7 @@ export default class Chat extends Component {
     for (let i = 0; i < unreadArrLen; i++) {
       firebase
         .database()
-        .ref('messages/' + this.state.person.from + '/' + this.state.person.to + '/' + unreadArr[i])
+        .ref('messages/' + fromMountDirOpp + '/' + unreadArr[i])
         .update({ read: true });
 
       for (let j = len - 1; j >= len - 40; j--) {
@@ -156,27 +155,22 @@ export default class Chat extends Component {
     ref.update({ unread: [] });
   }
 
-  setReadStatus(msgObj: { [x: string]: boolean; key: string; }) {
-    firebase
-      .database()
-      .ref('messages/' + this.state.person.from + '/' + this.state.person.to +
-        '/' + msgObj.key)
-      .update({ read: true });
-  }
-
   componentWillUnmount() {
     this.updateOnlineStatus(false);
 
-  //   this.props.navigation.navigate('HomeComp',
-  //   {
-  //     screen: 'Home',
-  //     params: {
-  //       fromLogin: false,
-  //       fromChatPage: this.props.route.params.user.mobile
-  //     }
-  //   }
-  // );
-    // BackHandler.removeEventListener('hardwareBackPress', this.handleBackButton);
+    firebase
+      .database()
+      .ref('messages')
+      .child(this.state.person.from)
+      .child(this.state.person.to)
+      .off('child_added');
+
+    firebase
+      .database()
+      .ref('recents')
+      .child(this.state.person.from)
+      .child(this.state.person.to)
+      .off('value');
   }
 
   handleChange = key => val => {
@@ -237,26 +231,39 @@ export default class Chat extends Component {
   updateOnlineStatus(status: boolean) {
     firebase
       .database()
-      .ref('recents/' + this.state.person.from + '/' + this.state.person.to)
+      .ref('recents/' + this.state.person.to + '/' + this.state.person.from)
       .update({
         online: status
       });
   }
 
   async setUnreadCount(msgId: string | null) {
+    let updates = {};
     let ref = firebase.database().ref('recents/' + this.state.person.to + '/' + this.state.person.from);
 
     let message = await ref.once("value").then(function (snapshot) {
       return snapshot.val();
     });
 
-    let unreadArr = message && message.unread ? message.unread : [];
-    unreadArr.push(msgId);
-
     message = message || {};
-    message['unread'] = unreadArr;
 
-    ref.set(message);
+    if (!this.state.isUserOnline) {
+      let unreadArr = message && message.unread ? message.unread : [];
+      unreadArr.push(msgId);
+      message['unread'] = unreadArr;
+      message['time'] = firebase.database.ServerValue.TIMESTAMP
+
+      updates[
+        'recents/' + this.state.person.to + '/' + this.state.person.from
+      ] = message;
+
+      ref.set(message);
+    }
+
+    firebase
+      .database()
+      .ref('recents/' + this.state.person.from + '/' + this.state.person.to)
+      .update({ time: firebase.database.ServerValue.TIMESTAMP });
   }
 
   sendMessage = async () => {
@@ -272,9 +279,7 @@ export default class Chat extends Component {
         .child(this.state.person.to)
         .push().key;
 
-      if (!this.state.isUserOnline) {
-        this.setUnreadCount(msgId);
-      }
+      this.setUnreadCount(msgId);
 
       let updates = {};
       let message = {

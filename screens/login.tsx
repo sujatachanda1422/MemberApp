@@ -24,8 +24,8 @@ export default class Login extends Component {
         super();
         this.state = {
             mobile: null,
-            loginPin: '1111',
-            // loginPin: null,
+            // loginPin: '1111',
+            loginPin: null,
             isLoading: false,
             hasAccount: false
         }
