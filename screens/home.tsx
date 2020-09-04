@@ -41,8 +41,8 @@ export default class Home extends Component {
   _unsubscribe: any = () => { };
   memberListPromise: Promise<Object[]> | undefined;
 
-  constructor() {
-    super();
+  constructor(props: Readonly<{}>) {
+    super(props);
 
     this.state = {
       isLoading: false,
@@ -56,11 +56,6 @@ export default class Home extends Component {
 
   UNSAFE_componentWillReceiveProps() {
     this.getMemberList();
-
-    // since this is called after login is completed
-    if (!eventAttached) {
-      this.attachUnreadCountEvent();
-    }
   }
 
   getMemberList() {
@@ -107,6 +102,10 @@ export default class Home extends Component {
 
   async isLoggedIn() {
     loggedInUserMobile = await AsyncStorage.getItem('loggedInMobile');
+
+    if (!eventAttached && loggedInUserMobile) {
+      this.attachUnreadCountEvent(loggedInUserMobile);
+    }
   }
 
   async UNSAFE_componentWillMount() {
@@ -142,13 +141,13 @@ export default class Home extends Component {
     });
   }
 
-  attachUnreadCountEvent() {
+  attachUnreadCountEvent(user: string) {
     eventAttached = true;
 
     firebase
       .database()
       .ref('recents')
-      .child(loggedInUserMobile)
+      .child(user)
       .on('value', (value) => {
         unreadMsgObj = {};
         const val = value.val();

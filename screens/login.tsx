@@ -31,7 +31,6 @@ export default class Login extends Component {
         }
     }
 
-
     componentDidMount() {
         BackHandler.addEventListener('hardwareBackPress', this.handleBackButton);
 
@@ -111,15 +110,12 @@ export default class Login extends Component {
                     AsyncStorage.setItem('loggedInMobile', this.state.mobile);
                     AsyncStorage.setItem('loggedInUser', JSON.stringify(memberDetails));
 
-                    this.props.navigation.navigate('HomeComp',
-                        {
-                            screen: 'Home',
-                            params: {
-                                fromLogin: true,
-                                user: memberDetails
-                            }
+                    this.props.navigation.navigate('HomeComp', {
+                        screen: 'Home',
+                        params: {
+                            user: memberDetails
                         }
-                    )
+                    });
                 } else {
                     Alert.alert('', 'Wrong login pin');
                 }

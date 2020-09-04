@@ -103,7 +103,6 @@ export default class Profile extends Component {
           {
             screen: 'Home',
             params: {
-              fromLogin: false,
               user: this.state
             }
           }
