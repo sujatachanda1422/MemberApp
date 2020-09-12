@@ -9,7 +9,7 @@ import {
 import { Checkbox } from 'react-native-paper';
 import { Entypo } from '@expo/vector-icons';
 
-export default class Profile extends Component {
+export default class FiterModal extends Component {
   constructor(props: Readonly<{}>) {
     super(props);
 
@@ -29,7 +29,6 @@ export default class Profile extends Component {
   }
 
   UNSAFE_componentWillMount() {
-    console.log("Mount", this.props.show);
     this.setState({ ...this.props.show, modalVisible: true });
   }
 
@@ -54,8 +53,6 @@ export default class Profile extends Component {
     }
 
     this.setState(newObj);
-
-    console.log("new", newObj);
 
     this.props.onFilterSelect(newObj);
   }

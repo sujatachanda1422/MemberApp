@@ -39,7 +39,6 @@ export default class Home extends Component {
   memberArray: Array<Object> = [];
   db: firebase.firestore.Firestore;
   _unsubscribe: any = () => { };
-  memberListPromise: Promise<Object[]> | undefined;
 
   constructor(props: Readonly<{}>) {
     super(props);
@@ -85,8 +84,6 @@ export default class Home extends Component {
             this.memberArray.push(docData);
           }
         });
-
-        this.memberListPromise = Promise.resolve(this.memberArray);
 
         this.setState({ memberList: [...this.memberArray] });
 
@@ -565,7 +562,7 @@ export default class Home extends Component {
                           <Text style={styles.unreadCount} >{item.count}</Text>
                         </View>
                       }
-                      <View style={{}}>
+                      <View>
                         <AntDesign name="right" size={24} color="#dcdcdc" />
                       </View>
                     </View>

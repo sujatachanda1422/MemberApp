@@ -178,7 +178,8 @@ export default class Signup extends Component {
 
         this.setState({
           doOTPVerify: true,
-          doMobileVerify: false
+          doMobileVerify: false,
+          number: otp
         });
       })
       .catch(error => {
@@ -357,16 +358,18 @@ export default class Signup extends Component {
                   <View>
                     <TextInput
                       style={styles.inputStyle}
-                      placeholder="Enter OTP"
+                      placeholder="Enter verification number"
                       maxLength={4}
                       keyboardType='numeric'
                       value={this.state.otp}
                       onChangeText={(val) => this.updateInputVal(val, 'otp')}
                     />
 
+                    <Text style={{marginBottom: 10}}>Verification number: {this.state.number}</Text>
+
                     <Button
                       color="#3740FE"
-                      title="Verify OTP"
+                      title="Verify Number"
                       onPress={() => this.verifyOtp()}
                     />
                   </View>
