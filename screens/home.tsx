@@ -64,6 +64,7 @@ export default class Home extends Component {
 
     this.db
       .collection("member_list")
+      .orderBy('agentId')
       .get().then((querySnapshot) => {
         this.setState({
           isLoading: false
@@ -96,6 +97,7 @@ export default class Home extends Component {
         console.log('List error = ', error);
       });
   }
+
 
   async isLoggedIn() {
     loggedInUserMobile = await AsyncStorage.getItem('loggedInMobile');
@@ -396,6 +398,7 @@ export default class Home extends Component {
     stopLoading?: boolean) {
     return query
       .orderBy('dob', 'desc')
+      .orderBy('agentId')
       .get().then(querySnapshot => {
         let docData;
 

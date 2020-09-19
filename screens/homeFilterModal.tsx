@@ -33,6 +33,22 @@ export default class FiterModal extends Component {
   }
 
   hideModal(type: string) {
+    const state = this.state;
+    let dirty = false;
+
+    if (type === 'filter') {
+      for (let i in state) {
+        if (i !== 'modalVisible' && i !== 'search' && state[i]) {
+          dirty = true;
+          break;
+        }
+      }
+
+      if (!dirty) {
+        type = 'clear';
+      }
+    }
+
     const obj = type === 'clear' ?
       {
         age1822: false,

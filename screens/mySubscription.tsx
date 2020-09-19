@@ -95,15 +95,15 @@ export default class MySubscription extends Component {
             {this.state.status &&
               <View style={{ marginBottom: 30 }}>
                 <View style={styles.item}>
-                  <Text style={styles.lable}>Current Package </Text>
+                  <Text style={styles.lable}>Package Name</Text>
                   <Text style={styles.itemValue}>{this.state.package_name}</Text>
                 </View>
                 <View style={styles.item}>
-                  <Text style={styles.lable}>Status </Text>
+                  <Text style={styles.lable}>Status</Text>
                   <Text style={styles.itemValue}>{this.state.status}</Text>
                 </View>
                 <View style={styles.item}>
-                  <Text style={styles.lable}>Remaining Chats </Text>
+                  <Text style={styles.lable}>Remaining Chats</Text>
                   <Text style={styles.itemValue}>{this.state.remaining_chat}</Text>
                 </View>
 
