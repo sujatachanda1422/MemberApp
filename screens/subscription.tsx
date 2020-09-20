@@ -57,7 +57,7 @@ export default class Subscription extends Component {
   }
 
   getConfirmation() {
-    Alert.alert('', 'Are you sure, you want to buy this subscription?',
+    Alert.alert('', 'Are you sure want to subscribe this package?',
     [
         {
             text: 'Cancel'
