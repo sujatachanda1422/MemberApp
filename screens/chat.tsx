@@ -205,6 +205,13 @@ export default class Chat extends Component {
 
     batch.set(toRef, this.state.person.loggedInMember);
 
+    // const chatConnect = this.db.collection("chat_connect")
+    //   .doc(this.state.person.from)
+    //   .collection('chats')
+    //   .doc(this.state.person.loggedInMember.mobile);
+
+    // batch.set(toRef, this.state.person.loggedInMember);
+
     // Commit the batch
     batch.commit().then(function () {
       console.log('Chat db updated');

@@ -23,7 +23,7 @@ const girlImg = require("../images/girl.jpg");
 let unreadMsgObj = {};
 let eventAttached = false;
 let loggedInUserMobile: string | null | undefined = null;
-let subscriptionResult: firebase.firestore.DocumentData | undefined = {};
+let subscriptionResult: [];
 let chatListResult: firebase.firestore.DocumentData[] = [];
 let filterObj = {
   age1822: false,
@@ -299,9 +299,12 @@ export default class Home extends Component {
   checkForSubscription() {
     this.db.collection("subscription_list")
       .doc(loggedInUserMobile)
+      .collection('list')
       .get()
-      .then((doc) => {
-        subscriptionResult = doc.data();
+      .then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+          subscriptionResult.push(doc.data());
+        });
       })
       .catch(error => {
         console.log('Error = ', error);
@@ -328,7 +331,7 @@ export default class Home extends Component {
       return;
     }
 
-    if (subscriptionResult) {
+    if (subscriptionResult.length) {
       const today = new Date().getTime();
       const expiryDate = new Date(subscriptionResult.expiry_date).getTime();
 
