@@ -120,19 +120,21 @@ export default class MySubscription extends Component {
                 {this.state.expiry_date.length > 0 &&
                   <View style={styles.item}>
                     <Text style={styles.lable}>Expiry Date</Text>
-                    {this.state.expiry_date.map((item, index) => {
-                      if (item !== '') {
-                        return <Text style={styles.itemValue} key={index}>
-                          {this.formatDate(item)}
-                        </Text>
-                      } else {
-                        return <Text style={[styles.itemValue, { textTransform: 'uppercase' }]}
-                          key={index}>
-                          NIL
+                    <View style={{ flexShrink: 1 }}>
+                      {this.state.expiry_date.map((item, index) => {
+                        if (item !== '') {
+                          return <Text style={[styles.itemValue, { flexShrink: 0 }]} key={index}>
+                            {this.formatDate(item)}
+                          </Text>
+                        } else {
+                          return <Text style={[styles.itemValue, { textTransform: 'uppercase' }]}
+                            key={index}>
+                            NIL
                       </Text>
+                        }
+                      })
                       }
-                    })
-                    }
+                    </View>
                   </View>
                 }
               </View>
