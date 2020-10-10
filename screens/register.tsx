@@ -108,6 +108,11 @@ export default class Signup extends Component {
       createdAt: new Date().getTime()
     })
       .then(_ => {
+        this.setSilverPackage();
+        this.setState({
+          isLoading: false
+        });
+
         this.props.navigation.navigate('HomeComp',
           {
             screen: 'Login',
@@ -115,11 +120,7 @@ export default class Signup extends Component {
               mobile: this.state.mobile
             }
           }
-        )
-
-        this.setState({
-          isLoading: false
-        });
+        );
       })
       .catch(error => {
         this.setState({
@@ -308,6 +309,52 @@ export default class Signup extends Component {
     });
   }
 
+  setSilverPackage() {
+    this.db.collection("package_list")
+      .orderBy('chatNumber', 'asc')
+      .limit(2)
+      .get()
+      .then((querySnapshot) => {
+        const packages: any[] = [];
+        querySnapshot.forEach((doc) => {
+          packages.push(doc.data());
+        });
+
+        this.setSubscription(packages[1]);
+      })
+      .catch(err => {
+        this.setState({
+          isLoading: false
+        });
+        console.error('Error in package fetch', err);
+      })
+  }
+
+  setSubscription(packageDetails: { name: any; chatNumber: any; validity: number; id: any; }) {
+    const packageDoc = {
+      member_mobile: this.state.mobile,
+      package_name: packageDetails.name,
+      request_date_time: new Date().toLocaleDateString("en-US"),
+      status: 'accepted',
+      accepted_by: 'starter',
+      remaining_chat: packageDetails.chatNumber,
+      expiry_date: new Date(new Date().getTime() + ((packageDetails.validity * 30) * 24 * 60 * 60 * 1000)).toLocaleDateString("en-US"),
+      name: this.state.name,
+      id: packageDetails.id
+    };
+
+    const db = this.db.collection("subscription_list")
+      .doc(this.state.mobile);
+
+    db
+      .set({ id: packageDoc.id }) // sample field for avoiding shallow data
+      .then(_ => {
+        db.collection('list')
+          .doc(packageDoc.id)
+          .set(packageDoc)
+      }).catch(err => console.log('Subscription update error = ', err));
+  }
+
   render() {
     if (this.state.isLoading) {
       return (
@@ -365,7 +412,7 @@ export default class Signup extends Component {
                       onChangeText={(val) => this.updateInputVal(val, 'otp')}
                     />
 
-                    <Text style={{marginBottom: 10}}>Verification number: {this.state.number}</Text>
+                    <Text style={{ marginBottom: 10 }}>Verification number: {this.state.number}</Text>
 
                     <Button
                       color="#3740FE"

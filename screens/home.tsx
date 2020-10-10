@@ -383,14 +383,6 @@ export default class Home extends Component {
   }
 
   verifyOnMemberClick(clickedMember: { mobile: firebase.firestore.DocumentData; }) {
-    // Free 1 member chat
-    if (!connectList.length) {
-      this.navigateToChat('Chat', this.props.route.params.user, clickedMember, {
-        isLifeTime: true
-      });
-      return;
-    }
-
     let count = 0;
     const today = new Date().getTime();
 

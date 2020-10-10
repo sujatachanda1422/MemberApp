@@ -218,12 +218,6 @@ export default class Chat extends Component {
       mobile: this.state.person.to
     };
 
-    if (this.props.route.params.subscribedData.isLifeTime) {
-      const dateNow = new Date();
-      const date = new Date(dateNow.getFullYear() + 10, dateNow.getMonth(), dateNow.getDate());
-      connectObj.expiry = new Date(date).toLocaleDateString('en-US')
-    }
-
     batch.set(chatConnect, connectObj);
 
     // Commit the batch

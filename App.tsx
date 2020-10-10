@@ -93,24 +93,6 @@ function HomeComp() {
   )
 }
 
-function SideMenu() {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerTintColor: '#fff',
-        headerTitleAlign: 'center',
-        headerTitleStyle: {
-          color: '#fff'
-        },
-        headerStyle: {
-          backgroundColor: '#3b8dbd',
-        },
-      }}>
-      <Stack.Screen name="Home" component={Home} />
-    </Stack.Navigator>
-  )
-}
-
 export default function App() {
   return (
     <NavigationContainer>
@@ -121,9 +103,6 @@ export default function App() {
         <Drawer.Screen name="HomeComp"
           component={HomeComp}
         />
-        {/* <Drawer.Screen name="SideMenu"
-          component={SideMenu}
-        /> */}
       </Drawer.Navigator>
     </NavigationContainer>
   );

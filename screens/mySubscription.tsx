@@ -150,7 +150,7 @@ export default class MySubscription extends Component {
 
             <Button
               color="#3740FE"
-              title="Add Subscription"
+              title="Add New Subscription"
               onPress={() => this.addPackage()}
             />
           </View>
